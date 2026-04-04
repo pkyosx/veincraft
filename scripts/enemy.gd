@@ -68,6 +68,7 @@ func take_damage(amount: int) -> void:
 		return
 	hp -= amount
 	flash_timer = FLASH_DURATION
+	Audio.play_sfx("hit", -8.0)
 
 	# Spawn floating damage number
 	var dmg: Node2D = Node2D.new()

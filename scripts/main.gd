@@ -112,12 +112,14 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 		grid[pos.y][pos.x] = GameData.Cell.TOWER
 		towers[pos] = {"type": tower_type, "damage": tc["damage"], "range": tc["range"], "cooldown": tc["cooldown"], "timer": 0.0}
 		_recalc_tower_upgrades(pos)
+		Audio.play_sfx("place")
 		return true
 	elif config["type"] == "upgrade":
 		if not can_place_upgrade(pos):
 			return false
 		grid[pos.y][pos.x] = GameData.Cell.UPGRADE
 		upgrades[pos] = item_type
+		Audio.play_sfx("place")
 		# Recalc adjacent towers
 		var neighbors: Array[Vector2i] = [pos + Vector2i(0,-1), pos + Vector2i(0,1), pos + Vector2i(-1,0), pos + Vector2i(1,0)]
 		for n in neighbors:
@@ -129,8 +131,10 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 			return false
 		if grid[pos.y][pos.x] == GameData.Cell.ROCK or grid[pos.y][pos.x] == GameData.Cell.TREE:
 			grid[pos.y][pos.x] = GameData.Cell.EMPTY
+			Audio.play_sfx("kill", 2.0)  # bomb explosion
 			# Check for hidden treasure
 			if pos in hidden_treasures:
+				Audio.play_sfx("treasure", 3.0)
 				var treasure = hidden_treasures[pos]
 				hidden_treasures.erase(pos)
 				if treasure == "gold":
@@ -242,6 +246,7 @@ func _process_towers(delta: float) -> void:
 			tower["timer"] = tower["cooldown"]
 			best_enemy.take_damage(tower["damage"])
 			_spawn_projectile(tower_world, best_enemy.global_position)
+			Audio.play_sfx("shoot", -3.0)
 
 func _spawn_projectile(from: Vector2, to: Vector2) -> void:
 	var script: GDScript = load("res://scripts/projectile.gd")
@@ -260,11 +265,12 @@ func _process_enemies(_delta: float) -> void:
 		if e.is_dead:
 			gold += e.gold_value
 			to_remove.append(e)
-			# Don't queue_free — death tween handles it
+			Audio.play_sfx("kill")
 		elif e.reached_end:
 			hp -= 1
 			e.queue_free()
 			to_remove.append(e)
+			Audio.play_sfx("warn", 3.0)
 			if hp <= 0:
 				_game_over()
 	for e in to_remove:
