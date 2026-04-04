@@ -74,14 +74,78 @@ const ENEMY_PATH: Array[Vector2i] = [
 	Vector2i(7, 6), Vector2i(8, 6), Vector2i(9, 6), Vector2i(10, 6), Vector2i(11, 6),
 ]
 
+# Enemy types
+enum EnemyType { NORMAL, FAST, TANK }
+
+const ENEMY_CONFIGS: Dictionary = {
+	EnemyType.NORMAL: {
+		"name": "Soldier",
+		"hp_mult": 1.0,
+		"speed_mult": 1.0,
+		"color": Color(0.3, 0.7, 0.15),
+		"color_light": Color(0.4, 0.85, 0.25),
+		"radius": 10.0,
+		"gold": 3,
+	},
+	EnemyType.FAST: {
+		"name": "Scout",
+		"hp_mult": 0.5,
+		"speed_mult": 1.8,
+		"color": Color(0.8, 0.6, 0.1),
+		"color_light": Color(0.95, 0.75, 0.2),
+		"radius": 7.0,
+		"gold": 2,
+	},
+	EnemyType.TANK: {
+		"name": "Brute",
+		"hp_mult": 2.5,
+		"speed_mult": 0.6,
+		"color": Color(0.5, 0.15, 0.6),
+		"color_light": Color(0.65, 0.25, 0.75),
+		"radius": 14.0,
+		"gold": 6,
+	},
+}
+
 static func get_enemies_per_wave(wave: int) -> int:
-	return 4 + wave * 2
+	return 5 + wave * 2
 
-static func get_enemy_hp(wave: int) -> int:
-	return 6 + wave * 3
+static func get_base_hp(wave: int) -> int:
+	return 12 + wave * 5
 
-static func get_enemy_speed(wave: int) -> float:
-	return 55.0 + wave * 3.0
+static func get_base_speed(wave: int) -> float:
+	return 42.0 + wave * 2.0
+
+static func get_wave_composition(wave: int) -> Array:
+	var comp: Array = []
+	var total: int = get_enemies_per_wave(wave)
+	if wave <= 2:
+		# Early: all normal
+		for i in range(total):
+			comp.append(EnemyType.NORMAL)
+	elif wave <= 5:
+		# Mix normal + fast
+		for i in range(total):
+			if i % 3 == 0:
+				comp.append(EnemyType.FAST)
+			else:
+				comp.append(EnemyType.NORMAL)
+	elif wave <= 10:
+		# Mix all three
+		for i in range(total):
+			match i % 5:
+				0: comp.append(EnemyType.FAST)
+				1: comp.append(EnemyType.TANK)
+				_: comp.append(EnemyType.NORMAL)
+	else:
+		# Late: heavy mix
+		for i in range(total):
+			match i % 4:
+				0: comp.append(EnemyType.FAST)
+				1: comp.append(EnemyType.TANK)
+				2: comp.append(EnemyType.TANK)
+				_: comp.append(EnemyType.NORMAL)
+	return comp
 
 static func roll_shop_item() -> int:
 	var total_weight: int = 0

@@ -132,12 +132,15 @@ func _recalc_tower_upgrades(tower_pos: Vector2i) -> void:
 			tower[stat] += uc["value"]
 	tower["cooldown"] = max(0.2, tower["cooldown"])
 
+var wave_composition: Array = []
+
 func start_wave() -> void:
 	if phase != "build" or game_over:
 		return
 	wave += 1
 	phase = "fight"
-	spawn_queue = GameData.get_enemies_per_wave(wave)
+	wave_composition = GameData.get_wave_composition(wave)
+	spawn_queue = wave_composition.size()
 	spawn_timer = 0.5
 	selected_bag_index = -1
 	_update_hud()
@@ -158,16 +161,17 @@ func _process_spawning(delta: float) -> void:
 		return
 	spawn_timer -= delta
 	if spawn_timer <= 0:
-		spawn_timer = 0.6
+		spawn_timer = 0.55
 		spawn_queue -= 1
-		_spawn_enemy()
+		var enemy_type: int = wave_composition.pop_front() if wave_composition.size() > 0 else 0
+		_spawn_enemy(enemy_type)
 
-func _spawn_enemy() -> void:
+func _spawn_enemy(enemy_type: int) -> void:
 	var script: GDScript = load("res://scripts/enemy.gd")
 	var e: Node2D = Node2D.new()
 	e.set_script(script)
 	enemy_container.add_child(e)
-	e.setup(GameData.ENEMY_PATH, GameData.get_enemy_hp(wave), GameData.get_enemy_speed(wave), self)
+	e.setup(GameData.ENEMY_PATH, GameData.get_base_hp(wave), GameData.get_base_speed(wave), self, enemy_type)
 	enemies.append(e)
 
 func _process_towers(delta: float) -> void:
@@ -207,9 +211,9 @@ func _process_enemies(_delta: float) -> void:
 			to_remove.append(e)
 			continue
 		if e.is_dead:
-			gold += GameData.KILL_GOLD
-			e.queue_free()
+			gold += e.gold_value
 			to_remove.append(e)
+			# Don't queue_free — death tween handles it
 		elif e.reached_end:
 			hp -= 1
 			e.queue_free()
