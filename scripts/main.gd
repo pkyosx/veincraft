@@ -28,6 +28,10 @@ var treasure_notify_timer: float = 0.0
 # Path cells set for quick lookup
 var path_set: Dictionary = {}
 
+# Screen shake
+var shake_timer: float = 0.0
+var shake_intensity: float = 0.0
+@onready var camera: Camera2D = $Camera
 @onready var enemy_container: Node2D = $EnemyContainer
 @onready var projectile_container: Node2D = $ProjectileContainer
 
@@ -194,9 +198,19 @@ func start_wave() -> void:
 	selected_bag_index = -1
 	_update_hud()
 
+func screen_shake(intensity: float = 4.0, duration: float = 0.15) -> void:
+	shake_intensity = intensity
+	shake_timer = duration
+
 func _process(delta: float) -> void:
 	if treasure_notify_timer > 0:
 		treasure_notify_timer -= delta
+	# Screen shake
+	if shake_timer > 0:
+		shake_timer -= delta
+		camera.offset = Vector2(randf_range(-shake_intensity, shake_intensity), randf_range(-shake_intensity, shake_intensity))
+		if shake_timer <= 0:
+			camera.offset = Vector2.ZERO
 	if game_over:
 		return
 	if phase == "fight":
@@ -244,8 +258,41 @@ func _process_towers(delta: float) -> void:
 					best_enemy = e
 		if best_enemy:
 			tower["timer"] = tower["cooldown"]
-			best_enemy.take_damage(tower["damage"])
-			_spawn_projectile(tower_world, best_enemy.global_position)
+			var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
+
+			# Frost tower: slow enemies
+			if "slow" in tc:
+				best_enemy.apply_slow(tc["slow"], 2.0)
+
+			# Tesla tower: chain to nearby enemies
+			if "chain" in tc:
+				var chain_count: int = tc["chain"]
+				var hit_enemies: Array = [best_enemy]
+				best_enemy.take_damage(tower["damage"])
+				_spawn_projectile(tower_world, best_enemy.global_position)
+				# Chain to nearby enemies
+				var last_pos: Vector2 = best_enemy.global_position
+				for _c in range(chain_count - 1):
+					var next_enemy: Node2D = null
+					var next_dist: float = 2.0 * GameData.CELL_SIZE
+					for e in enemies:
+						if not is_instance_valid(e) or e.is_dead or e in hit_enemies:
+							continue
+						var d: float = last_pos.distance_to(e.global_position)
+						if d < next_dist:
+							next_dist = d
+							next_enemy = e
+					if next_enemy:
+						next_enemy.take_damage(tower["damage"])
+						_spawn_projectile(last_pos, next_enemy.global_position)
+						hit_enemies.append(next_enemy)
+						last_pos = next_enemy.global_position
+					else:
+						break
+			else:
+				best_enemy.take_damage(tower["damage"])
+				_spawn_projectile(tower_world, best_enemy.global_position)
+
 			get_node("/root/Audio").play_sfx("shoot", -3.0)
 
 func _spawn_projectile(from: Vector2, to: Vector2) -> void:
@@ -266,11 +313,13 @@ func _process_enemies(_delta: float) -> void:
 			gold += e.gold_value
 			to_remove.append(e)
 			get_node("/root/Audio").play_sfx("kill")
+			screen_shake(5.0, 0.12)
 		elif e.reached_end:
 			hp -= 1
 			e.queue_free()
 			to_remove.append(e)
 			get_node("/root/Audio").play_sfx("warn", 3.0)
+			screen_shake(8.0, 0.25)
 			if hp <= 0:
 				_game_over()
 	for e in to_remove:

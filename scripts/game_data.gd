@@ -10,10 +10,10 @@ const GRID_OFFSET: Vector2 = Vector2(40, 60)
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }
 
 # Tower types
-enum TowerType { TURRET, TREBUCHET }
+enum TowerType { TURRET, TREBUCHET, FROST, TESLA }
 
 # Tile item types (what goes in the bag)
-enum ItemType { TURRET, TREBUCHET, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB }
+enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB }
 
 const TOWER_CONFIGS: Dictionary = {
 	TowerType.TURRET: {
@@ -23,24 +23,48 @@ const TOWER_CONFIGS: Dictionary = {
 		"cooldown": 0.8,
 		"color": Color(0.8, 0.2, 0.2),
 		"icon": "+",
-		"cost": 5,
+		"cost": 8,
 		"item": ItemType.TURRET,
 	},
 	TowerType.TREBUCHET: {
 		"name": "Trebuchet",
-		"damage": 8,
+		"damage": 10,
 		"range": 3.5,
 		"cooldown": 2.0,
 		"color": Color(0.7, 0.4, 0.1),
 		"icon": "T",
-		"cost": 15,
+		"cost": 18,
 		"item": ItemType.TREBUCHET,
+	},
+	TowerType.FROST: {
+		"name": "Frost",
+		"damage": 1,
+		"range": 2.0,
+		"cooldown": 0.5,
+		"color": Color(0.3, 0.7, 0.95),
+		"icon": "*",
+		"cost": 12,
+		"item": ItemType.FROST,
+		"slow": 0.4,  # slows enemies by 40%
+	},
+	TowerType.TESLA: {
+		"name": "Tesla",
+		"damage": 5,
+		"range": 1.8,
+		"cooldown": 1.2,
+		"color": Color(0.6, 0.3, 0.9),
+		"icon": "Z",
+		"cost": 20,
+		"item": ItemType.TESLA,
+		"chain": 3,  # hits up to 3 enemies
 	},
 }
 
 const ITEM_CONFIGS: Dictionary = {
-	ItemType.TURRET: {"name": "Turret", "color": Color(0.8, 0.2, 0.2), "type": "tower", "tower": TowerType.TURRET, "cost": 5},
-	ItemType.TREBUCHET: {"name": "Trebuchet", "color": Color(0.7, 0.4, 0.1), "type": "tower", "tower": TowerType.TREBUCHET, "cost": 15},
+	ItemType.TURRET: {"name": "Turret", "color": Color(0.8, 0.2, 0.2), "type": "tower", "tower": TowerType.TURRET, "cost": 8},
+	ItemType.TREBUCHET: {"name": "Trebuchet", "color": Color(0.7, 0.4, 0.1), "type": "tower", "tower": TowerType.TREBUCHET, "cost": 18},
+	ItemType.FROST: {"name": "Frost", "color": Color(0.3, 0.7, 0.95), "type": "tower", "tower": TowerType.FROST, "cost": 12},
+	ItemType.TESLA: {"name": "Tesla", "color": Color(0.6, 0.3, 0.9), "type": "tower", "tower": TowerType.TESLA, "cost": 20},
 	ItemType.UPGRADE_DMG: {"name": "+DMG", "color": Color(1.0, 0.5, 0.1), "type": "upgrade", "stat": "damage", "value": 2, "cost": 8},
 	ItemType.UPGRADE_SPEED: {"name": "+SPD", "color": Color(0.2, 0.7, 1.0), "type": "upgrade", "stat": "cooldown", "value": -0.15, "cost": 8},
 	ItemType.UPGRADE_RANGE: {"name": "+RNG", "color": Color(0.3, 0.9, 0.3), "type": "upgrade", "stat": "range", "value": 0.8, "cost": 8},
@@ -49,12 +73,14 @@ const ITEM_CONFIGS: Dictionary = {
 
 # Shop slot machine weights
 const SHOP_POOL: Array = [
-	{"item": ItemType.TURRET, "weight": 30},
-	{"item": ItemType.TREBUCHET, "weight": 15},
-	{"item": ItemType.UPGRADE_DMG, "weight": 20},
-	{"item": ItemType.UPGRADE_SPEED, "weight": 15},
-	{"item": ItemType.UPGRADE_RANGE, "weight": 15},
-	{"item": ItemType.BOMB, "weight": 5},
+	{"item": ItemType.TURRET, "weight": 20},
+	{"item": ItemType.TREBUCHET, "weight": 10},
+	{"item": ItemType.FROST, "weight": 12},
+	{"item": ItemType.TESLA, "weight": 8},
+	{"item": ItemType.UPGRADE_DMG, "weight": 18},
+	{"item": ItemType.UPGRADE_SPEED, "weight": 12},
+	{"item": ItemType.UPGRADE_RANGE, "weight": 12},
+	{"item": ItemType.BOMB, "weight": 8},
 ]
 
 const SPIN_COST: int = 10

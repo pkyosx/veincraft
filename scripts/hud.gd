@@ -108,11 +108,33 @@ func _build_ui() -> void:
 	btn_spin.pressed.connect(_on_spin_pressed)
 	add_child(btn_spin)
 
+	# Tower shop — direct buy
+	var shop_title: Label = Label.new()
+	shop_title.text = "Buy Tower"
+	shop_title.add_theme_font_size_override("font_size", 18)
+	shop_title.position = Vector2(1180, 480)
+	add_child(shop_title)
+
+	var tower_grid: GridContainer = GridContainer.new()
+	tower_grid.columns = 2
+	tower_grid.position = Vector2(1180, 510)
+	tower_grid.name = "TowerGrid"
+	add_child(tower_grid)
+
+	for tower_type in GameData.TOWER_CONFIGS:
+		var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
+		var btn: Button = Button.new()
+		btn.custom_minimum_size = Vector2(165, 45)
+		btn.text = tc["name"] + " $" + str(tc["cost"])
+		var captured_type: int = tower_type
+		btn.pressed.connect(func() -> void: _buy_tower(captured_type))
+		tower_grid.add_child(btn)
+
 	# Play button
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(1180, 480)
+	btn_play.position = Vector2(1180, 620)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -141,6 +163,20 @@ func _build_ui() -> void:
 		game.restart()
 	)
 	vbox.add_child(btn_restart)
+
+func _buy_tower(tower_type: int) -> void:
+	var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
+	var cost: int = tc["cost"]
+	if game.gold < cost:
+		return
+	if game.bag.size() >= GameData.MAX_BAG:
+		return
+	if game.phase != "build":
+		return
+	game.gold -= cost
+	game.bag.append(tc["item"])
+	get_node("/root/Audio").play_sfx("place")
+	game._update_hud()
 
 func _on_spin_pressed() -> void:
 	if spin_active:
@@ -237,6 +273,16 @@ func refresh(p_hp: int, p_gold: int, p_wave: int, p_max_waves: int, p_bag: Array
 			btn.text = ""
 			btn.disabled = true
 			btn.remove_theme_color_override("font_color")
+
+	# Tower buy buttons
+	var tower_grid: GridContainer = get_node("TowerGrid")
+	var idx: int = 0
+	for tower_type in GameData.TOWER_CONFIGS:
+		if idx < tower_grid.get_child_count():
+			var btn: Button = tower_grid.get_child(idx)
+			var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
+			btn.disabled = p_gold < tc["cost"] or p_bag.size() >= GameData.MAX_BAG or p_phase != "build"
+		idx += 1
 
 	# Button states
 	var can_spin: bool = p_gold >= GameData.SPIN_COST and p_bag.size() < GameData.MAX_BAG and p_phase == "build" and not spin_active

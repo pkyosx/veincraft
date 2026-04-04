@@ -21,6 +21,11 @@ var radius: float = 10.0
 var flash_timer: float = 0.0
 const FLASH_DURATION: float = 0.12
 
+# Slow effect
+var slow_factor: float = 1.0  # 1.0 = normal speed
+var slow_timer: float = 0.0
+var base_speed: float = 60.0
+
 # Sprite animation
 var sprite: Sprite2D = null
 var anim_timer: float = 0.0
@@ -39,6 +44,7 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 	hp = int(p_hp * config["hp_mult"])
 	max_hp = hp
 	speed = p_speed * config["speed_mult"]
+	base_speed = speed
 	body_color = config["color"]
 	body_color_light = config["color_light"]
 	radius = config["radius"]
@@ -61,12 +67,24 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 		global_position = game.cell_to_world(path[0])
 		path_index = 1
 
+func apply_slow(factor: float, duration: float) -> void:
+	slow_factor = 1.0 - factor
+	slow_timer = duration
+
 func _process(delta: float) -> void:
 	if is_dead or reached_end:
 		return
 	if path_index >= path.size():
 		reached_end = true
 		return
+
+	# Slow effect countdown
+	if slow_timer > 0:
+		slow_timer -= delta
+		speed = base_speed * slow_factor
+		if slow_timer <= 0:
+			speed = base_speed
+			slow_factor = 1.0
 
 	var target: Vector2 = game.cell_to_world(path[path_index])
 	var dir: Vector2 = target - global_position
@@ -84,6 +102,9 @@ func _process(delta: float) -> void:
 		flash_timer -= delta
 		if sprite:
 			sprite.modulate = Color.WHITE.lerp(Color(1, 0.3, 0.3), flash_timer / FLASH_DURATION)
+	elif slow_timer > 0:
+		if sprite:
+			sprite.modulate = Color(0.6, 0.8, 1.0)  # blue tint when slowed
 		else:
 			pass  # handled in _draw
 	else:
