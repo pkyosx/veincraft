@@ -31,11 +31,15 @@ var path_set: Dictionary = {}
 # Screen shake
 var shake_timer: float = 0.0
 var shake_intensity: float = 0.0
+
+# Tower sprite sheet (4 towers, each 64x64)
+var tower_texture: Texture2D = null
 @onready var camera: Camera2D = $Camera
 @onready var enemy_container: Node2D = $EnemyContainer
 @onready var projectile_container: Node2D = $ProjectileContainer
 
 func _ready() -> void:
+	tower_texture = load("res://sprites/tower_sheet.png")
 	_init_grid()
 	_update_hud()
 
@@ -497,18 +501,31 @@ func _draw_path_arrows() -> void:
 		draw_line(tip, tip - dir * 10 - perp * 6, Color(0.4, 0.4, 0.45, 0.5), 2.0)
 
 func _draw_towers() -> void:
+	# Tower sprite order in sheet: TURRET=0, TREBUCHET=1, FROST=2, TESLA=3
+	var tower_frame_map: Dictionary = {
+		GameData.TowerType.TURRET: 0,
+		GameData.TowerType.TREBUCHET: 1,
+		GameData.TowerType.FROST: 2,
+		GameData.TowerType.TESLA: 3,
+	}
 	for pos in towers:
 		var tower: Dictionary = towers[pos]
 		var center: Vector2 = cell_to_world(pos)
 		var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
-		# Base
-		draw_rect(Rect2(center - Vector2(20, 20), Vector2(40, 40)), tc["color"].darkened(0.3))
-		draw_rect(Rect2(center - Vector2(16, 16), Vector2(32, 32)), tc["color"])
+		# Draw tower sprite
+		if tower_texture:
+			var frame: int = tower_frame_map.get(tower["type"], 0)
+			var src_rect: Rect2 = Rect2(frame * 64, 0, 64, 64)
+			var dst_size: float = 56.0
+			var dst_rect: Rect2 = Rect2(center - Vector2(dst_size / 2, dst_size / 2), Vector2(dst_size, dst_size))
+			draw_texture_rect_region(tower_texture, dst_rect, src_rect)
+		else:
+			# Fallback: colored rectangles
+			draw_rect(Rect2(center - Vector2(20, 20), Vector2(40, 40)), tc["color"].darkened(0.3))
+			draw_rect(Rect2(center - Vector2(16, 16), Vector2(32, 32)), tc["color"])
 		# Range circle (build phase only)
 		if phase == "build":
 			draw_arc(center, tower["range"] * GameData.CELL_SIZE, 0, TAU, 48, Color(1, 1, 1, 0.1), 1.0)
-		# Name
-		draw_string(ThemeDB.fallback_font, center + Vector2(-14, 5), tc["name"].left(3), HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color.WHITE)
 
 func _draw_upgrades() -> void:
 	for pos in upgrades:

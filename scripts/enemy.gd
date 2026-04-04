@@ -34,6 +34,8 @@ const ANIM_SPEED: float = 0.2  # seconds per frame
 
 # Sprite textures (loaded once, shared)
 static var pumpkin_texture: Texture2D = null
+static var enemy_textures: Dictionary = {}  # EnemyType -> Texture2D
+static var enemy_hframes: Dictionary = {}   # EnemyType -> int
 
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
@@ -50,18 +52,29 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 	radius = config["radius"]
 	gold_value = config["gold"]
 
-	# Setup sprite for normal enemies
-	if enemy_type == GameData.EnemyType.NORMAL:
-		if pumpkin_texture == null:
-			pumpkin_texture = load("res://sprites/pumpkin_monster_64.png")
-		if pumpkin_texture:
-			sprite = Sprite2D.new()
-			sprite.texture = pumpkin_texture
-			sprite.hframes = 4
-			sprite.frame = 0
-			sprite.scale = Vector2(1.2, 1.2)
-			add_child(sprite)
-			radius = 24.0
+	# Setup sprites for all enemy types
+	if enemy_textures.is_empty():
+		enemy_textures[GameData.EnemyType.NORMAL] = load("res://sprites/enemy_normal.png")
+		enemy_textures[GameData.EnemyType.FAST] = load("res://sprites/enemy_fast.png")
+		enemy_textures[GameData.EnemyType.TANK] = load("res://sprites/enemy_tank.png")
+		enemy_hframes[GameData.EnemyType.NORMAL] = 6
+		enemy_hframes[GameData.EnemyType.FAST] = 4
+		enemy_hframes[GameData.EnemyType.TANK] = 6
+
+	var tex: Texture2D = enemy_textures.get(enemy_type, null)
+	if tex:
+		sprite = Sprite2D.new()
+		sprite.texture = tex
+		sprite.hframes = enemy_hframes.get(enemy_type, 6)
+		sprite.frame = 0
+		var scale_map: Dictionary = {
+			GameData.EnemyType.NORMAL: Vector2(0.4, 0.4),
+			GameData.EnemyType.FAST: Vector2(0.35, 0.35),
+			GameData.EnemyType.TANK: Vector2(0.5, 0.5),
+		}
+		sprite.scale = scale_map.get(enemy_type, Vector2(0.4, 0.4))
+		add_child(sprite)
+		radius = 24.0 if enemy_type != GameData.EnemyType.FAST else 18.0
 
 	if path.size() > 0:
 		global_position = game.cell_to_world(path[0])
@@ -116,7 +129,7 @@ func _process(delta: float) -> void:
 		anim_timer += delta
 		if anim_timer >= ANIM_SPEED:
 			anim_timer = 0.0
-			anim_frame = (anim_frame + 1) % 4
+			anim_frame = (anim_frame + 1) % sprite.hframes
 			sprite.frame = anim_frame
 
 	queue_redraw()
