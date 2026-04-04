@@ -34,12 +34,23 @@ var shake_intensity: float = 0.0
 
 # Tower sprite sheet (4 towers, each 64x64)
 var tower_texture: Texture2D = null
+
+# Terrain textures
+var tree_texture: Texture2D = null
+var rock_textures: Array[Texture2D] = []
+var grass_texture: Texture2D = null
+var tree_anim_timer: float = 0.0
+var tree_anim_frame: int = 0
 @onready var camera: Camera2D = $Camera
 @onready var enemy_container: Node2D = $EnemyContainer
 @onready var projectile_container: Node2D = $ProjectileContainer
 
 func _ready() -> void:
 	tower_texture = load("res://sprites/tower_sheet.png")
+	tree_texture = load("res://sprites/tree.png")
+	rock_textures.append(load("res://sprites/rock1.png"))
+	rock_textures.append(load("res://sprites/rock2.png"))
+	grass_texture = load("res://sprites/tilemap_grass.png")
 	_init_grid()
 	_update_hud()
 
@@ -215,6 +226,11 @@ func _process(delta: float) -> void:
 		camera.offset = Vector2(randf_range(-shake_intensity, shake_intensity), randf_range(-shake_intensity, shake_intensity))
 		if shake_timer <= 0:
 			camera.offset = Vector2.ZERO
+	# Tree sway animation
+	tree_anim_timer += delta
+	if tree_anim_timer >= 0.15:
+		tree_anim_timer = 0.0
+		tree_anim_frame = (tree_anim_frame + 1) % 8
 	if game_over:
 		return
 	if phase == "fight":
@@ -450,43 +466,54 @@ func _draw() -> void:
 	_draw_notification()
 
 func _draw_grid() -> void:
+	# Grass tile from tilemap: center tile at row 1, col 1 (64x64 each in 576x384 sheet)
+	var grass_src: Rect2 = Rect2(64, 64, 64, 64)
 	for y in range(GameData.GRID_H):
 		for x in range(GameData.GRID_W):
 			var rect: Rect2 = Rect2(GameData.GRID_OFFSET + Vector2(x * GameData.CELL_SIZE, y * GameData.CELL_SIZE), Vector2(GameData.CELL_SIZE, GameData.CELL_SIZE))
 			var cell: int = grid[y][x]
+			# Draw grass ground for all cells
+			if grass_texture:
+				draw_texture_rect_region(grass_texture, rect, grass_src)
+			else:
+				draw_rect(rect, Color(0.18, 0.18, 0.22))
+			# Draw dirt path overlay
+			if cell == GameData.Cell.PATH:
+				draw_rect(rect, Color(0.55, 0.42, 0.28))
+			# Draw decorations on top
 			match cell:
-				GameData.Cell.EMPTY:
-					draw_rect(rect, Color(0.18, 0.18, 0.22))
-				GameData.Cell.PATH:
-					draw_rect(rect, Color(0.25, 0.25, 0.28))
 				GameData.Cell.ROCK:
-					draw_rect(rect, Color(0.18, 0.18, 0.22))
-					_draw_rock(rect.get_center())
+					_draw_rock(rect.get_center(), x + y)
 				GameData.Cell.TREE:
-					draw_rect(rect, Color(0.18, 0.18, 0.22))
 					_draw_tree(rect.get_center())
-				GameData.Cell.TOWER:
-					draw_rect(rect, Color(0.15, 0.15, 0.2))
-				GameData.Cell.UPGRADE:
-					draw_rect(rect, Color(0.15, 0.15, 0.2))
-			# Cell border
-			draw_rect(rect, Color(0.3, 0.3, 0.35), false, 1.0)
+			# Cell border (subtle)
+			draw_rect(rect, Color(0.2, 0.3, 0.15, 0.3), false, 1.0)
 
-func _draw_rock(center: Vector2) -> void:
-	var pts: PackedVector2Array = PackedVector2Array([
-		center + Vector2(-12, 8), center + Vector2(-8, -10), center + Vector2(4, -12),
-		center + Vector2(14, -4), center + Vector2(10, 10), center + Vector2(-4, 12),
-	])
-	draw_colored_polygon(pts, Color(0.4, 0.38, 0.35))
-	draw_polyline(pts, Color(0.5, 0.48, 0.45), 1.5, true)
+func _draw_rock(center: Vector2, seed_val: int = 0) -> void:
+	if rock_textures.size() > 0:
+		var tex: Texture2D = rock_textures[seed_val % rock_textures.size()]
+		var dst: Rect2 = Rect2(center - Vector2(30, 30), Vector2(60, 60))
+		draw_texture_rect(tex, dst, false)
+	else:
+		var pts: PackedVector2Array = PackedVector2Array([
+			center + Vector2(-12, 8), center + Vector2(-8, -10), center + Vector2(4, -12),
+			center + Vector2(14, -4), center + Vector2(10, 10), center + Vector2(-4, 12),
+		])
+		draw_colored_polygon(pts, Color(0.4, 0.38, 0.35))
 
 func _draw_tree(center: Vector2) -> void:
-	# Trunk
-	draw_rect(Rect2(center.x - 3, center.y, 6, 14), Color(0.35, 0.22, 0.1))
-	# Canopy
-	draw_circle(center + Vector2(0, -6), 14, Color(0.15, 0.45, 0.2))
-	draw_circle(center + Vector2(-6, -2), 10, Color(0.12, 0.4, 0.18))
-	draw_circle(center + Vector2(6, -2), 10, Color(0.18, 0.5, 0.22))
+	if tree_texture:
+		# Tree sprite: 1536x256, 8 frames of 192x256
+		var frame_w: float = 192.0
+		var frame_h: float = 256.0
+		var src: Rect2 = Rect2(tree_anim_frame * frame_w, 0, frame_w, frame_h)
+		var dst_h: float = 80.0
+		var dst_w: float = dst_h * (frame_w / frame_h)
+		var dst: Rect2 = Rect2(center.x - dst_w / 2, center.y - dst_h * 0.6, dst_w, dst_h)
+		draw_texture_rect_region(tree_texture, dst, src)
+	else:
+		draw_rect(Rect2(center.x - 3, center.y, 6, 14), Color(0.35, 0.22, 0.1))
+		draw_circle(center + Vector2(0, -6), 14, Color(0.15, 0.45, 0.2))
 
 func _draw_path_arrows() -> void:
 	for i in range(GameData.ENEMY_PATH.size() - 1):
