@@ -1,313 +1,416 @@
 extends Node2D
 
-var base_room: Node2D
-var second_room: Node2D
-var corridor_node: Node2D
-var units_node: Node2D
-var wormhole_node: Node2D  # visual entity inside room 2
+# State
+var grid: Array = []  # 2D [y][x] of Cell type
+var towers: Dictionary = {}  # Vector2i -> {type, damage, range, cooldown, timer}
+var upgrades: Dictionary = {}  # Vector2i -> item_type
+var bag: Array = []  # Array of ItemType, max 4
+var gold: int = GameData.STARTING_GOLD
+var hp: int = GameData.MAX_HP
+var wave: int = 0
+var max_waves: int = 20
 
-var protectors: Array = []
 var enemies: Array = []
-
-# Wormhole state
-var wormhole_active: bool = false
-var wormhole_spawn_time: float = 6.0
-var wormhole_timer: float = 0.0
-var wormhole_hp: int = 120
-var wormhole_max_hp: int = 120
-
-# Enemy spawning
+var projectiles: Array = []
+var spawn_queue: int = 0
 var spawn_timer: float = 0.0
-var spawn_interval: float = 2.0
-var total_enemies_spawned: int = 0
-
-# Base resources
-var base_resources: int = 100
-var max_resources: int = 100
-var drain_rate: int = 2
-
+var phase: String = "build"  # "build" or "fight"
 var game_over: bool = false
-var game_won: bool = false
-var unit_script: GDScript
-var hud: Control
+
+var selected_bag_index: int = -1
+var hovered_cell: Vector2i = Vector2i(-1, -1)
+
+# Path cells set for quick lookup
+var path_set: Dictionary = {}
+
+@onready var enemy_container: Node2D = $EnemyContainer
+@onready var projectile_container: Node2D = $ProjectileContainer
 
 func _ready() -> void:
-	unit_script = load("res://scripts/unit.gd")
-	_build_world()
-	_spawn_protectors(4)
+	_init_grid()
 	_update_hud()
 
-func _build_world() -> void:
-	# Corridor (rendered behind rooms)
-	var corridor_script: GDScript = load("res://scripts/corridor.gd")
-	corridor_node = Node2D.new()
-	corridor_node.set_script(corridor_script)
-	add_child(corridor_node)
+func _init_grid() -> void:
+	grid.clear()
+	towers.clear()
+	upgrades.clear()
+	path_set.clear()
+	for y in range(GameData.GRID_H):
+		var row: Array = []
+		for x in range(GameData.GRID_W):
+			row.append(GameData.Cell.EMPTY)
+		grid.append(row)
 
-	var room_script: GDScript = load("res://scripts/room.gd")
+	# Mark path
+	for p in GameData.ENEMY_PATH:
+		grid[p.y][p.x] = GameData.Cell.PATH
+		path_set[p] = true
 
-	# Room 1: Main Base (left)
-	base_room = Node2D.new()
-	base_room.set_script(room_script)
-	add_child(base_room)
-	base_room.setup(base_room.RoomType.BASE, 280.0, 200.0, "Main Base")
-	base_room.global_position = Vector2(250, 360)
-	base_room.set_door("right")
-
-	# Room 2: Second room (right) — normal room, always visible
-	second_room = Node2D.new()
-	second_room.set_script(room_script)
-	add_child(second_room)
-	second_room.setup(second_room.RoomType.OUTPOST, 220.0, 160.0, "Outpost")
-	second_room.global_position = Vector2(1000, 360)
-	second_room.set_door("left")
-
-	# Corridor between doors
-	corridor_node.setup(base_room.get_door_world(), second_room.get_door_world())
-
-	# Wormhole entity (hidden until activated)
-	wormhole_node = Node2D.new()
-	wormhole_node.set_script(load("res://scripts/wormhole.gd"))
-	add_child(wormhole_node)
-	wormhole_node.global_position = second_room.global_position
-	wormhole_node.visible = false
-
-	# Units container
-	units_node = Node2D.new()
-	units_node.name = "Units"
-	add_child(units_node)
-
-	# HUD
-	var canvas: CanvasLayer = CanvasLayer.new()
-	canvas.name = "UILayer"
-	add_child(canvas)
-
-	hud = Control.new()
-	hud.set_script(load("res://scripts/hud.gd"))
-	hud.name = "HUD"
-	canvas.add_child(hud)
-
-func _spawn_protectors(count: int) -> void:
-	for i in range(count):
-		var unit: Node2D = _create_unit(0, 20, 3, 55.0)
-		unit.global_position = base_room.get_center() + Vector2(-30 * i, 0)
-		protectors.append(unit)
-	# First protector is the leader — patrols
-	# Rest follow the one in front
-	_assign_group_patrol()
-
-func _create_unit(team: int, hp: int, atk: int, spd: float) -> Node2D:
-	var unit: Node2D = Node2D.new()
-	unit.set_script(unit_script)
-	units_node.add_child(unit)
-	unit.setup(team, hp, atk, spd)
-	unit.died.connect(_on_unit_died)
-	return unit
-
-func _assign_group_patrol() -> void:
-	var shared_path: Array = [
-		base_room.get_center(),
-		base_room.get_door_world(),
-		second_room.get_door_world(),
-		second_room.get_center(),
-		second_room.get_door_world(),
-		base_room.get_door_world(),
-		base_room.get_center(),
+	# Place some rocks and trees
+	var obstacles: Array[Vector2i] = [
+		Vector2i(3, 0), Vector2i(7, 0), Vector2i(10, 1),
+		Vector2i(0, 3), Vector2i(8, 2), Vector2i(9, 3),
+		Vector2i(3, 7), Vector2i(7, 4), Vector2i(10, 4),
+		Vector2i(0, 6), Vector2i(4, 7), Vector2i(8, 0),
 	]
-	for i in range(protectors.size()):
-		var unit: Node2D = protectors[i]
-		if not is_instance_valid(unit) or unit.is_dead:
-			continue
-		if i == 0:
-			# Leader patrols on waypoints
-			unit.follow_target_unit = null
-			unit.set_patrol(shared_path)
-		else:
-			# Followers follow the unit in front with spacing
-			unit.follow_target_unit = protectors[i - 1]
-			unit.follow_distance = 35.0
-			unit.is_patrolling = false
-			unit.has_move_target = false
-			# Slightly slower so spacing builds naturally
-			unit.speed = 55.0 - i * 2.0
+	for obs in obstacles:
+		if grid[obs.y][obs.x] == GameData.Cell.EMPTY:
+			grid[obs.y][obs.x] = GameData.Cell.ROCK if randf() > 0.4 else GameData.Cell.TREE
 
-func _reassign_patrol_for(unit: Node2D) -> void:
-	# After combat, rejoin the group by following the leader
-	if protectors.size() > 0 and is_instance_valid(protectors[0]) and not protectors[0].is_dead:
-		unit.follow_target_unit = protectors[0]
-		unit.follow_distance = 30.0
-		unit.is_patrolling = false
+func cell_to_world(pos: Vector2i) -> Vector2:
+	return GameData.GRID_OFFSET + Vector2(pos.x * GameData.CELL_SIZE + GameData.CELL_SIZE / 2, pos.y * GameData.CELL_SIZE + GameData.CELL_SIZE / 2)
+
+func world_to_cell(world_pos: Vector2) -> Vector2i:
+	var local: Vector2 = world_pos - GameData.GRID_OFFSET
+	return Vector2i(int(local.x / GameData.CELL_SIZE), int(local.y / GameData.CELL_SIZE))
+
+func is_valid_cell(pos: Vector2i) -> bool:
+	return pos.x >= 0 and pos.x < GameData.GRID_W and pos.y >= 0 and pos.y < GameData.GRID_H
+
+func can_place_tower(pos: Vector2i) -> bool:
+	if not is_valid_cell(pos):
+		return false
+	return grid[pos.y][pos.x] == GameData.Cell.EMPTY
+
+func can_place_upgrade(pos: Vector2i) -> bool:
+	if not is_valid_cell(pos):
+		return false
+	if grid[pos.y][pos.x] != GameData.Cell.EMPTY:
+		return false
+	# Must be adjacent to a tower
+	var neighbors: Array[Vector2i] = [pos + Vector2i(0,-1), pos + Vector2i(0,1), pos + Vector2i(-1,0), pos + Vector2i(1,0)]
+	for n in neighbors:
+		if n in towers:
+			return true
+	return false
+
+func place_item(pos: Vector2i, item_type: int) -> bool:
+	var config: Dictionary = GameData.ITEM_CONFIGS[item_type]
+	if config["type"] == "tower":
+		if not can_place_tower(pos):
+			return false
+		var tower_type: int = config["tower"]
+		var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
+		grid[pos.y][pos.x] = GameData.Cell.TOWER
+		towers[pos] = {"type": tower_type, "damage": tc["damage"], "range": tc["range"], "cooldown": tc["cooldown"], "timer": 0.0}
+		_recalc_tower_upgrades(pos)
+		return true
+	elif config["type"] == "upgrade":
+		if not can_place_upgrade(pos):
+			return false
+		grid[pos.y][pos.x] = GameData.Cell.UPGRADE
+		upgrades[pos] = item_type
+		# Recalc adjacent towers
+		var neighbors: Array[Vector2i] = [pos + Vector2i(0,-1), pos + Vector2i(0,1), pos + Vector2i(-1,0), pos + Vector2i(1,0)]
+		for n in neighbors:
+			if n in towers:
+				_recalc_tower_upgrades(n)
+		return true
+	elif config["type"] == "bomb":
+		if not is_valid_cell(pos):
+			return false
+		if grid[pos.y][pos.x] == GameData.Cell.ROCK or grid[pos.y][pos.x] == GameData.Cell.TREE:
+			grid[pos.y][pos.x] = GameData.Cell.EMPTY
+			return true
+		return false
+	return false
+
+func _recalc_tower_upgrades(tower_pos: Vector2i) -> void:
+	if tower_pos not in towers:
+		return
+	var tower: Dictionary = towers[tower_pos]
+	var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
+	tower["damage"] = tc["damage"]
+	tower["range"] = tc["range"]
+	tower["cooldown"] = tc["cooldown"]
+	# Apply adjacent upgrades
+	var neighbors: Array[Vector2i] = [tower_pos + Vector2i(0,-1), tower_pos + Vector2i(0,1), tower_pos + Vector2i(-1,0), tower_pos + Vector2i(1,0)]
+	for n in neighbors:
+		if n in upgrades:
+			var uc: Dictionary = GameData.ITEM_CONFIGS[upgrades[n]]
+			var stat: String = uc["stat"]
+			tower[stat] += uc["value"]
+	tower["cooldown"] = max(0.2, tower["cooldown"])
+
+func start_wave() -> void:
+	if phase != "build" or game_over:
+		return
+	wave += 1
+	phase = "fight"
+	spawn_queue = GameData.get_enemies_per_wave(wave)
+	spawn_timer = 0.5
+	selected_bag_index = -1
+	_update_hud()
 
 func _process(delta: float) -> void:
-	if game_over or game_won:
+	if game_over:
 		return
+	if phase == "fight":
+		_process_spawning(delta)
+		_process_towers(delta)
+		_process_enemies(delta)
+		_process_projectiles(delta)
+		_check_wave_end()
+	queue_redraw()
 
-	# Wormhole appearance timer
-	if not wormhole_active:
-		wormhole_timer += delta
-		if wormhole_timer >= wormhole_spawn_time:
-			_activate_wormhole()
-	else:
-		# Spawn enemies
-		spawn_timer -= delta
-		if spawn_timer <= 0:
-			spawn_timer = max(1.2, spawn_interval - total_enemies_spawned * 0.04)
-			_spawn_enemy()
-
-		# Enemies drain base resources
-		_process_enemy_drain()
-
-		# Protectors near wormhole attack it
-		_process_protector_wormhole_attack()
-
-	# Combat AI
-	_update_enemy_ai()
-	_update_protector_ai()
-
-	# Win/lose checks
-	if wormhole_active and wormhole_hp <= 0:
-		_victory()
-	if base_resources <= 0:
-		_defeat()
-
-	_update_hud()
-
-func _activate_wormhole() -> void:
-	wormhole_active = true
-	wormhole_node.visible = true
-	spawn_timer = 2.0
+func _process_spawning(delta: float) -> void:
+	if spawn_queue <= 0:
+		return
+	spawn_timer -= delta
+	if spawn_timer <= 0:
+		spawn_timer = 0.6
+		spawn_queue -= 1
+		_spawn_enemy()
 
 func _spawn_enemy() -> void:
-	total_enemies_spawned += 1
-	var scaling: float = 1.0 + total_enemies_spawned * 0.06
-	var unit: Node2D = _create_unit(
-		1,
-		int(10 * scaling),
-		int(2 * scaling),
-		50.0 + total_enemies_spawned * 1.0
-	)
-	# Spawn near the wormhole inside room 2
-	unit.global_position = second_room.get_center() + Vector2(randf_range(-20, 20), randf_range(-20, 20))
-	enemies.append(unit)
+	var script: GDScript = load("res://scripts/enemy.gd")
+	var e: Node2D = Node2D.new()
+	e.set_script(script)
+	enemy_container.add_child(e)
+	e.setup(GameData.ENEMY_PATH, GameData.get_enemy_hp(wave), GameData.get_enemy_speed(wave), self)
+	enemies.append(e)
 
-	# Path: room 2 door → base door → inside base
-	unit.set_move_path([
-		second_room.get_door_world(),
-		base_room.get_door_world(),
-		base_room.get_random_interior_pos(),
-	])
-
-func _process_enemy_drain() -> void:
-	for e in enemies:
-		if not is_instance_valid(e) or e.is_dead:
+func _process_towers(delta: float) -> void:
+	for pos in towers:
+		var tower: Dictionary = towers[pos]
+		tower["timer"] -= delta
+		if tower["timer"] > 0:
 			continue
-		# Enemy inside base with no target → drain
-		if base_room.is_inside(e.global_position):
-			if e.target == null or not is_instance_valid(e.target) or e.target.is_dead:
-				if e.drain_timer <= 0:
-					e.drain_timer = e.drain_cooldown
-					base_resources = max(0, base_resources - drain_rate)
+		var tower_world: Vector2 = cell_to_world(pos)
+		var best_enemy: Node2D = null
+		var best_progress: float = -1.0
+		for e in enemies:
+			if not is_instance_valid(e) or e.is_dead:
+				continue
+			var dist: float = tower_world.distance_to(e.global_position) / GameData.CELL_SIZE
+			if dist <= tower["range"]:
+				if e.path_progress > best_progress:
+					best_progress = e.path_progress
+					best_enemy = e
+		if best_enemy:
+			tower["timer"] = tower["cooldown"]
+			best_enemy.take_damage(tower["damage"])
+			_spawn_projectile(tower_world, best_enemy.global_position)
 
-func _process_protector_wormhole_attack() -> void:
-	if wormhole_hp <= 0:
+func _spawn_projectile(from: Vector2, to: Vector2) -> void:
+	var script: GDScript = load("res://scripts/projectile.gd")
+	var p: Node2D = Node2D.new()
+	p.set_script(script)
+	projectile_container.add_child(p)
+	p.setup(from, to)
+	projectiles.append(p)
+
+func _process_enemies(_delta: float) -> void:
+	var to_remove: Array = []
+	for e in enemies:
+		if not is_instance_valid(e):
+			to_remove.append(e)
+			continue
+		if e.is_dead:
+			gold += GameData.KILL_GOLD
+			e.queue_free()
+			to_remove.append(e)
+		elif e.reached_end:
+			hp -= 1
+			e.queue_free()
+			to_remove.append(e)
+			if hp <= 0:
+				_game_over()
+	for e in to_remove:
+		enemies.erase(e)
+	_update_hud()
+
+func _process_projectiles(_delta: float) -> void:
+	var to_remove: Array = []
+	for p in projectiles:
+		if not is_instance_valid(p):
+			to_remove.append(p)
+		elif p.done:
+			p.queue_free()
+			to_remove.append(p)
+	for p in to_remove:
+		projectiles.erase(p)
+
+func _check_wave_end() -> void:
+	if spawn_queue > 0:
 		return
-	for p in protectors:
-		if not is_instance_valid(p) or p.is_dead:
-			continue
-		# If protector is near the wormhole (inside room 2), attack it
-		var dist: float = p.global_position.distance_to(wormhole_node.global_position)
-		if dist < 60.0:
-			# Only attack if not fighting an enemy
-			if p.target == null or not is_instance_valid(p.target) or p.target.is_dead:
-				p.attack_timer -= get_process_delta_time()
-				if p.attack_timer <= 0:
-					p.attack_timer = p.attack_cooldown
-					wormhole_hp = max(0, wormhole_hp - p.attack_damage)
-					# Brief flash on wormhole
-					wormhole_node.flash()
-
-func _update_enemy_ai() -> void:
 	for e in enemies:
-		if not is_instance_valid(e) or e.is_dead:
-			continue
-		if e.target == null or not is_instance_valid(e.target) or e.target.is_dead:
-			e.target = null
-			# If near a protector, fight them
-			var closest: Node2D = _find_closest_unit(e.global_position, protectors, 100.0)
-			if closest:
-				e.target = closest
-				e.has_move_target = false
+		if is_instance_valid(e) and not e.is_dead and not e.reached_end:
+			return
+	# Wave complete
+	phase = "build"
+	gold += 5 + wave * 2  # wave bonus
+	_update_hud()
 
-func _update_protector_ai() -> void:
-	for p in protectors:
-		if not is_instance_valid(p) or p.is_dead:
-			continue
-		if p.target == null or not is_instance_valid(p.target) or p.target.is_dead:
-			p.target = null
-			# Find nearby enemy to fight
-			var closest: Node2D = _find_closest_unit(p.global_position, enemies, 150.0)
-			if closest:
-				p.target = closest
-				p.is_patrolling = false
-			elif not p.is_patrolling:
-				# Resume patrol
-				_reassign_patrol_for(p)
+func _game_over() -> void:
+	game_over = true
+	phase = "over"
+	_update_hud()
 
-func _find_closest_unit(pos: Vector2, units: Array, max_range: float) -> Node2D:
-	var closest: Node2D = null
-	var closest_dist: float = max_range
-	for u in units:
-		if not is_instance_valid(u) or u.is_dead:
-			continue
-		var d: float = pos.distance_to(u.global_position)
-		if d < closest_dist:
-			closest_dist = d
-			closest = u
-	return closest
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		hovered_cell = world_to_cell(event.position)
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_handle_click(event.position)
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		selected_bag_index = -1
 
-func _on_unit_died(unit: Node2D) -> void:
-	if unit.team == 0:
-		protectors.erase(unit)
+func _handle_click(pos: Vector2) -> void:
+	if game_over:
+		return
+	if phase != "build":
+		return
+	# Check if clicking on HUD area (handled by HUD)
+	# Check grid placement
+	var cell: Vector2i = world_to_cell(pos)
+	if selected_bag_index >= 0 and selected_bag_index < bag.size():
+		var item: int = bag[selected_bag_index]
+		if place_item(cell, item):
+			bag.remove_at(selected_bag_index)
+			selected_bag_index = -1
+			_update_hud()
+
+func buy_spin() -> void:
+	if gold < GameData.SPIN_COST:
+		return
+	if bag.size() >= GameData.MAX_BAG:
+		return
+	gold -= GameData.SPIN_COST
+	var item: int = GameData.roll_shop_item()
+	bag.append(item)
+	_update_hud()
+
+func select_bag_item(index: int) -> void:
+	if index >= 0 and index < bag.size():
+		selected_bag_index = index
 	else:
-		enemies.erase(unit)
+		selected_bag_index = -1
 
-func _victory() -> void:
-	game_won = true
+func _update_hud() -> void:
+	var hud: Control = $UILayer/HUD
+	if hud and hud.has_method("refresh"):
+		hud.refresh(hp, gold, wave, max_waves, bag, selected_bag_index, phase, game_over)
+
+func restart() -> void:
 	for e in enemies:
 		if is_instance_valid(e):
 			e.queue_free()
 	enemies.clear()
-	wormhole_node.visible = false
-	if hud and hud.has_method("show_victory"):
-		hud.show_victory(total_enemies_spawned, base_resources)
-
-func _defeat() -> void:
-	game_over = true
-	if hud and hud.has_method("show_defeat"):
-		hud.show_defeat(total_enemies_spawned)
-
-func _update_hud() -> void:
-	if hud and hud.has_method("update_info"):
-		var alive: int = 0
-		for p in protectors:
-			if is_instance_valid(p) and not p.is_dead:
-				alive += 1
-		hud.update_info(alive, base_resources, max_resources, wormhole_hp, wormhole_max_hp, wormhole_active)
-
-func restart() -> void:
-	for u in protectors + enemies:
-		if is_instance_valid(u):
-			u.queue_free()
-	protectors.clear()
-	enemies.clear()
-	wormhole_active = false
-	wormhole_timer = 0.0
-	wormhole_hp = wormhole_max_hp
-	wormhole_node.visible = false
-	base_resources = max_resources
-	total_enemies_spawned = 0
-	spawn_timer = 0.0
+	for p in projectiles:
+		if is_instance_valid(p):
+			p.queue_free()
+	projectiles.clear()
+	grid.clear()
+	towers.clear()
+	upgrades.clear()
+	bag.clear()
+	gold = GameData.STARTING_GOLD
+	hp = GameData.MAX_HP
+	wave = 0
+	phase = "build"
 	game_over = false
-	game_won = false
-	_spawn_protectors(4)
+	spawn_queue = 0
+	selected_bag_index = -1
+	_init_grid()
 	_update_hud()
+
+# === DRAWING ===
+
+func _draw() -> void:
+	_draw_grid()
+	_draw_path_arrows()
+	_draw_towers()
+	_draw_upgrades()
+	_draw_hover()
+
+func _draw_grid() -> void:
+	for y in range(GameData.GRID_H):
+		for x in range(GameData.GRID_W):
+			var rect: Rect2 = Rect2(GameData.GRID_OFFSET + Vector2(x * GameData.CELL_SIZE, y * GameData.CELL_SIZE), Vector2(GameData.CELL_SIZE, GameData.CELL_SIZE))
+			var cell: int = grid[y][x]
+			match cell:
+				GameData.Cell.EMPTY:
+					draw_rect(rect, Color(0.18, 0.18, 0.22))
+				GameData.Cell.PATH:
+					draw_rect(rect, Color(0.25, 0.25, 0.28))
+				GameData.Cell.ROCK:
+					draw_rect(rect, Color(0.18, 0.18, 0.22))
+					_draw_rock(rect.get_center())
+				GameData.Cell.TREE:
+					draw_rect(rect, Color(0.18, 0.18, 0.22))
+					_draw_tree(rect.get_center())
+				GameData.Cell.TOWER:
+					draw_rect(rect, Color(0.15, 0.15, 0.2))
+				GameData.Cell.UPGRADE:
+					draw_rect(rect, Color(0.15, 0.15, 0.2))
+			# Cell border
+			draw_rect(rect, Color(0.3, 0.3, 0.35), false, 1.0)
+
+func _draw_rock(center: Vector2) -> void:
+	var pts: PackedVector2Array = PackedVector2Array([
+		center + Vector2(-12, 8), center + Vector2(-8, -10), center + Vector2(4, -12),
+		center + Vector2(14, -4), center + Vector2(10, 10), center + Vector2(-4, 12),
+	])
+	draw_colored_polygon(pts, Color(0.4, 0.38, 0.35))
+	draw_polyline(pts, Color(0.5, 0.48, 0.45), 1.5, true)
+
+func _draw_tree(center: Vector2) -> void:
+	# Trunk
+	draw_rect(Rect2(center.x - 3, center.y, 6, 14), Color(0.35, 0.22, 0.1))
+	# Canopy
+	draw_circle(center + Vector2(0, -6), 14, Color(0.15, 0.45, 0.2))
+	draw_circle(center + Vector2(-6, -2), 10, Color(0.12, 0.4, 0.18))
+	draw_circle(center + Vector2(6, -2), 10, Color(0.18, 0.5, 0.22))
+
+func _draw_path_arrows() -> void:
+	for i in range(GameData.ENEMY_PATH.size() - 1):
+		var from: Vector2 = cell_to_world(GameData.ENEMY_PATH[i])
+		var to: Vector2 = cell_to_world(GameData.ENEMY_PATH[i + 1])
+		var mid: Vector2 = (from + to) / 2
+		var dir: Vector2 = (to - from).normalized()
+		var perp: Vector2 = Vector2(-dir.y, dir.x)
+		# Arrow chevron
+		var tip: Vector2 = mid + dir * 8
+		draw_line(tip, tip - dir * 10 + perp * 6, Color(0.4, 0.4, 0.45, 0.5), 2.0)
+		draw_line(tip, tip - dir * 10 - perp * 6, Color(0.4, 0.4, 0.45, 0.5), 2.0)
+
+func _draw_towers() -> void:
+	for pos in towers:
+		var tower: Dictionary = towers[pos]
+		var center: Vector2 = cell_to_world(pos)
+		var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
+		# Base
+		draw_rect(Rect2(center - Vector2(20, 20), Vector2(40, 40)), tc["color"].darkened(0.3))
+		draw_rect(Rect2(center - Vector2(16, 16), Vector2(32, 32)), tc["color"])
+		# Range circle (build phase only)
+		if phase == "build":
+			draw_arc(center, tower["range"] * GameData.CELL_SIZE, 0, TAU, 48, Color(1, 1, 1, 0.1), 1.0)
+		# Name
+		draw_string(ThemeDB.fallback_font, center + Vector2(-14, 5), tc["name"].left(3), HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color.WHITE)
+
+func _draw_upgrades() -> void:
+	for pos in upgrades:
+		var item_type: int = upgrades[pos]
+		var config: Dictionary = GameData.ITEM_CONFIGS[item_type]
+		var center: Vector2 = cell_to_world(pos)
+		draw_rect(Rect2(center - Vector2(14, 14), Vector2(28, 28)), config["color"].darkened(0.2))
+		draw_string(ThemeDB.fallback_font, center + Vector2(-12, 4), config["name"], HORIZONTAL_ALIGNMENT_CENTER, -1, 10, Color.WHITE)
+
+func _draw_hover() -> void:
+	if not is_valid_cell(hovered_cell) or phase != "build":
+		return
+	var rect: Rect2 = Rect2(GameData.GRID_OFFSET + Vector2(hovered_cell.x * GameData.CELL_SIZE, hovered_cell.y * GameData.CELL_SIZE), Vector2(GameData.CELL_SIZE, GameData.CELL_SIZE))
+	var color: Color = Color(1, 1, 1, 0.15)
+	if selected_bag_index >= 0 and selected_bag_index < bag.size():
+		var item: int = bag[selected_bag_index]
+		var config: Dictionary = GameData.ITEM_CONFIGS[item]
+		if config["type"] == "tower" and can_place_tower(hovered_cell):
+			color = Color(0.3, 1, 0.3, 0.25)
+		elif config["type"] == "upgrade" and can_place_upgrade(hovered_cell):
+			color = Color(0.3, 0.7, 1, 0.25)
+		elif config["type"] == "bomb" and is_valid_cell(hovered_cell) and (grid[hovered_cell.y][hovered_cell.x] == GameData.Cell.ROCK or grid[hovered_cell.y][hovered_cell.x] == GameData.Cell.TREE):
+			color = Color(1, 0.8, 0, 0.3)
+		else:
+			color = Color(1, 0.2, 0.2, 0.2)
+	draw_rect(rect, color)
+	draw_rect(rect, Color(1, 1, 1, 0.4), false, 2.0)
