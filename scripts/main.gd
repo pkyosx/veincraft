@@ -295,6 +295,18 @@ func _process_towers(delta: float) -> void:
 
 			get_node("/root/Audio").play_sfx("shoot", -3.0)
 
+func _spawn_coins(pos: Vector2, value: int) -> void:
+	var coin_script: GDScript = load("res://scripts/coin_fly.gd")
+	var count: int = mini(value, 5)  # cap at 5 coins visually
+	for i in range(count):
+		var coin: Node2D = Node2D.new()
+		coin.set_script(coin_script)
+		add_child(coin)
+		var offset: Vector2 = Vector2(randf_range(-15, 15), randf_range(-15, 15))
+		coin.setup(pos + offset, 1)
+		# Stagger slightly so they don't all fly at once
+		coin.progress = -i * 0.08
+
 func _spawn_projectile(from: Vector2, to: Vector2) -> void:
 	var script: GDScript = load("res://scripts/projectile.gd")
 	var p: Node2D = Node2D.new()
@@ -313,6 +325,7 @@ func _process_enemies(_delta: float) -> void:
 			gold += e.gold_value
 			to_remove.append(e)
 			get_node("/root/Audio").play_sfx("kill")
+			_spawn_coins(e.global_position, e.gold_value)
 			screen_shake(5.0, 0.12)
 		elif e.reached_end:
 			hp -= 1
