@@ -21,6 +21,15 @@ var radius: float = 10.0
 var flash_timer: float = 0.0
 const FLASH_DURATION: float = 0.12
 
+# Sprite animation
+var sprite: Sprite2D = null
+var anim_timer: float = 0.0
+var anim_frame: int = 0
+const ANIM_SPEED: float = 0.2  # seconds per frame
+
+# Sprite textures (loaded once, shared)
+static var pumpkin_texture: Texture2D = null
+
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
 	game = p_game
@@ -34,6 +43,19 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 	body_color_light = config["color_light"]
 	radius = config["radius"]
 	gold_value = config["gold"]
+
+	# Setup sprite for normal enemies
+	if enemy_type == GameData.EnemyType.NORMAL:
+		if pumpkin_texture == null:
+			pumpkin_texture = load("res://sprites/pumpkin_monster_64.png")
+		if pumpkin_texture:
+			sprite = Sprite2D.new()
+			sprite.texture = pumpkin_texture
+			sprite.hframes = 4
+			sprite.frame = 0
+			sprite.scale = Vector2(1.2, 1.2)
+			add_child(sprite)
+			radius = 24.0
 
 	if path.size() > 0:
 		global_position = game.cell_to_world(path[0])
@@ -60,6 +82,21 @@ func _process(delta: float) -> void:
 
 	if flash_timer > 0:
 		flash_timer -= delta
+		if sprite:
+			sprite.modulate = Color.WHITE.lerp(Color(1, 0.3, 0.3), flash_timer / FLASH_DURATION)
+		else:
+			pass  # handled in _draw
+	else:
+		if sprite:
+			sprite.modulate = Color.WHITE
+
+	# Animate sprite frames
+	if sprite:
+		anim_timer += delta
+		if anim_timer >= ANIM_SPEED:
+			anim_timer = 0.0
+			anim_frame = (anim_frame + 1) % 4
+			sprite.frame = anim_frame
 
 	queue_redraw()
 
@@ -68,9 +105,9 @@ func take_damage(amount: int) -> void:
 		return
 	hp -= amount
 	flash_timer = FLASH_DURATION
-	Audio.play_sfx("hit", -8.0)
+	get_node("/root/Audio").play_sfx("hit", -8.0)
 
-	# Spawn floating damage number
+	# Floating damage number
 	var dmg: Node2D = Node2D.new()
 	dmg.set_script(load("res://scripts/damage_number.gd"))
 	game.add_child(dmg)
@@ -79,17 +116,21 @@ func take_damage(amount: int) -> void:
 	if hp <= 0:
 		hp = 0
 		is_dead = true
-		# Death pop effect
 		var tween: Tween = create_tween()
 		tween.tween_property(self, "scale", Vector2(1.5, 1.5), 0.1)
 		tween.tween_property(self, "scale", Vector2(0.0, 0.0), 0.15)
 		tween.parallel().tween_property(self, "modulate:a", 0.0, 0.15)
 
 func _draw() -> void:
+	# Only draw circles for non-sprite enemies (FAST, TANK)
+	if sprite:
+		# Just draw HP bar
+		_draw_hp_bar()
+		return
+
 	var draw_color: Color = body_color
 	var draw_light: Color = body_color_light
 
-	# Flash white when hit
 	if flash_timer > 0:
 		var flash_mix: float = flash_timer / FLASH_DURATION
 		draw_color = draw_color.lerp(Color.WHITE, flash_mix * 0.8)
@@ -111,18 +152,21 @@ func _draw() -> void:
 		draw_line(Vector2(-radius - 4, -2), Vector2(-radius - 10, -2), body_color_light, 1.5)
 		draw_line(Vector2(-radius - 3, 3), Vector2(-radius - 8, 3), body_color_light, 1.5)
 
-	# HP bar
-	if hp < max_hp:
-		var w: float = radius * 2.4
-		var h: float = 3.0
-		var bar_y: float = -radius - 7
-		draw_rect(Rect2(-w / 2, bar_y, w, h), Color(0.15, 0.15, 0.15))
-		var ratio: float = float(hp) / float(max_hp)
-		var bar_color: Color
-		if ratio > 0.5:
-			bar_color = Color(0.2, 0.8, 0.2)
-		elif ratio > 0.25:
-			bar_color = Color(0.8, 0.7, 0.1)
-		else:
-			bar_color = Color(0.9, 0.2, 0.2)
-		draw_rect(Rect2(-w / 2, bar_y, w * ratio, h), bar_color)
+	_draw_hp_bar()
+
+func _draw_hp_bar() -> void:
+	if hp >= max_hp:
+		return
+	var w: float = radius * 2.4
+	var h: float = 3.0
+	var bar_y: float = -radius - 7
+	draw_rect(Rect2(-w / 2, bar_y, w, h), Color(0.15, 0.15, 0.15))
+	var ratio: float = float(hp) / float(max_hp)
+	var bar_color: Color
+	if ratio > 0.5:
+		bar_color = Color(0.2, 0.8, 0.2)
+	elif ratio > 0.25:
+		bar_color = Color(0.8, 0.7, 0.1)
+	else:
+		bar_color = Color(0.9, 0.2, 0.2)
+	draw_rect(Rect2(-w / 2, bar_y, w * ratio, h), bar_color)

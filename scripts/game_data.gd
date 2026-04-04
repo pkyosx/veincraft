@@ -3,8 +3,8 @@ class_name GameData
 
 const GRID_W: int = 12
 const GRID_H: int = 8
-const CELL_SIZE: int = 72
-const GRID_OFFSET: Vector2 = Vector2(40, 80)
+const CELL_SIZE: int = 90
+const GRID_OFFSET: Vector2 = Vector2(40, 60)
 
 # Cell types
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }

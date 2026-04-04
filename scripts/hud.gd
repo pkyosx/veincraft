@@ -36,14 +36,14 @@ func _build_ui() -> void:
 	# Right panel background
 	var panel_bg: ColorRect = ColorRect.new()
 	panel_bg.color = Color(0.1, 0.1, 0.12, 0.9)
-	panel_bg.position = Vector2(910, 0)
-	panel_bg.size = Vector2(370, 720)
+	panel_bg.position = Vector2(1160, 0)
+	panel_bg.size = Vector2(440, 900)
 	panel_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(panel_bg)
 
 	# Info section
 	var info: VBoxContainer = VBoxContainer.new()
-	info.position = Vector2(920, 20)
+	info.position = Vector2(1180, 20)
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(info)
 
@@ -75,11 +75,11 @@ func _build_ui() -> void:
 	bag_title.text = "Bag (0/4)"
 	bag_title.name = "BagTitle"
 	bag_title.add_theme_font_size_override("font_size", 18)
-	bag_title.position = Vector2(920, 220)
+	bag_title.position = Vector2(1180, 220)
 	add_child(bag_title)
 
 	bag_container = HBoxContainer.new()
-	bag_container.position = Vector2(920, 250)
+	bag_container.position = Vector2(1180, 250)
 	add_child(bag_container)
 
 	for i in range(GameData.MAX_BAG):
@@ -95,7 +95,7 @@ func _build_ui() -> void:
 	spin_display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	spin_display.add_theme_font_size_override("font_size", 26)
 	spin_display.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
-	spin_display.position = Vector2(920, 345)
+	spin_display.position = Vector2(1180, 355)
 	spin_display.custom_minimum_size = Vector2(340, 45)
 	add_child(spin_display)
 
@@ -103,7 +103,7 @@ func _build_ui() -> void:
 	btn_spin = Button.new()
 	btn_spin.text = "Spin! ($" + str(GameData.SPIN_COST) + ")"
 	btn_spin.custom_minimum_size = Vector2(340, 50)
-	btn_spin.position = Vector2(920, 395)
+	btn_spin.position = Vector2(1180, 410)
 	btn_spin.add_theme_font_size_override("font_size", 20)
 	btn_spin.pressed.connect(_on_spin_pressed)
 	add_child(btn_spin)
@@ -112,7 +112,7 @@ func _build_ui() -> void:
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(920, 460)
+	btn_play.position = Vector2(1180, 480)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -157,6 +157,7 @@ func _on_spin_pressed() -> void:
 	spin_interval = 0.05
 	spin_current_display = 0
 	btn_spin.disabled = true
+	get_node("/root/Audio").play_spin()
 	game._update_hud()
 
 func _process(delta: float) -> void:
@@ -178,15 +179,15 @@ func _process(delta: float) -> void:
 		var config: Dictionary = GameData.ITEM_CONFIGS[item]
 		spin_display.text = ">> " + config["name"] + " <<"
 		spin_display.add_theme_color_override("font_color", config["color"])
-		get_node("/root/Audio").play_sfx("tick", -12.0)
 
 	if spin_timer >= spin_duration:
-		# Landing — show final result
+		# Landing — stop spin sound, play jackpot
 		spin_active = false
+		get_node("/root/Audio").stop_spin()
 		var config: Dictionary = GameData.ITEM_CONFIGS[spin_result]
 		spin_display.text = "★ " + config["name"] + " ★"
 		spin_display.add_theme_color_override("font_color", config["color"].lightened(0.3))
-		get_node("/root/Audio").play_sfx("jackpot", -8.0)
+		get_node("/root/Audio").play_sfx("jackpot", 0.0)
 		# Add to bag
 		game.bag.append(spin_result)
 		game._update_hud()
