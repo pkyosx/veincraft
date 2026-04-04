@@ -1,31 +1,5 @@
-[gd_resource type="AudioStreamWAV" format=3 uid="uid://ckrdb66s314gy"]
-
-[ext_resource type="Script" uid="uid://b8ymrwuipekr8" path="res://addons/godot_sfxr/SfxrAudioStream.gd" id="1_sdfaf"]
+[gd_resource type="AudioStreamWAV" format=4 uid="uid://ckrdb66s314gy"]
 
 [resource]
-script = ExtResource("1_sdfaf")
-wave/type = 0
-sample_params/sound_vol = 0.25
-sample_params/sample_rate = 44100.0
-envelope/attack_time = 0.0
-envelope/sustain_time = 0.03
-envelope/punch_time = 0.0
-envelope/decay_time = 0.06
-frequency/start_frequency = 0.55
-frequency/min_freq_cutoff = 0.0
-frequency/slide = 0.08
-frequency/delta_slide = 0.0
-vibrato/depth = 0.0
-vibrato/speed = 0.0
-arpeggiation/frequency_mult = 0.0
-arpeggiation/change_speed = 0.0
-duty_cycle/duty_cycle = 0.0
-duty_cycle/sweep = 0.0
-retrigger/rate = 0.0
-flanger/offset = 0.0
-flanger/sweep = 0.0
-low_pass_filter/cutoff_frequency = 1.0
-low_pass_filter/cutoff_sweep = 0.0
-low_pass_filter/resonance = 0.0
-high_pass_filter/cutoff_frequency = 0.0
-high_pass_filter/cutoff_sweep = 0.0
+data = PackedByteArray("gIyYo6uwsrGspZuPg3drYFdRT09TWWNueoaSnaatsbGuqKCViX1xZlxVUU9RV15odICMl6GprrCvq6Oaj4N3bGFZU1BRVFtkbnqGkZylq6+vrKeelIl9cmddV1JRU1hgaXWAi5egqKyuramimY6CeGxiWlVSU1ZcZW97hZGbo6mtraqlnZOIfnJoX1hUU1VaYWp1gIuWn6arrKunoZiOgnhtZFxXVFVYXmZwe4WQmqKoq6upo5yTiH5zaWBaVlVXW2JrdoCKlZ6kqauppp+XjYJ4bmVeWVZXWl9ncXuFj5mgpqmpp6Kbkoh+c2piXFhXWV1kbHaAipSco6epqKSeloyCeW9mX1pYWFthaHF7hY+Yn6SnqKWgmZGHfnRrY11aWVpfZW12gIqTm6Glp6ainJWMgnlwZ2FcWlpdYmlyfISOl56jpaajn5iQh351bGRfXFtcYGZud4CJkpqgo6WkoZuUi4J5cGhiXlxcX2Rqc3yEjZWcoaSkop2Xj4Z+dW1mYV1dXmJob3eAiZGYnqKjop+ak4uCenFqZGBeXmFlbHN8hI2Um5+ioqCclo6GfnZuZ2JfXmBjaXB4gIiQl5ygoaCdmJKKgnpya2VhX2BiZ210fISMk5mdoKCempWOhn52b2lkYWBiZWpxeICIj5abnp+enJeRiYJ6c2xnY2FiZGhudX2Di5KYnJ6enJmTjYV/d3BqZmNiY2drcnmAh46UmZydnZqWkImBe3RtaGVjZGZqb3Z9g4qRlpqcnJuXkoyFf3dxa2dlZGVobXN5gIeNk5iam5uYlI+IgXt0b2pnZWVna3B2fYOKkJWYmpqZlpGLhX94cm1pZ2Znam50eoCGjJKWmZqZl5OOiIF8dXBraGdnaW1xd32DiY+Tl5iZl5SQioR/eXNua2hoaWtvdHqAhouQlJeYl5WRjYeBfHZxbWppaWtucnh9g4iOkpWXl5WTj4qEf3l0cGxqamttcXV7gIWLj5OVlpWTkIyGgXx3cm5sa2ttb3R4foKIjJCTlZWUkY2JhH96dXFubGxsb3J2e4CFio6Rk5STko+LhoF9eHNwbm1tbnF1eX6Ch4uPkZOTko+MiIN/enZycG5tbnBzd3yAhImNj5GSkpCNioWBfXl1cm9ub3Bydnp+goaKjZCRkZCOi4eDf3t3dHFwb3BydXh8gISIi46QkJCOjImFgX15dnNxcHFydHd6foKFiYyOj4+OjIqGgoB8eHVzcnFyc3Z5fYCDh4qMjo6OjYqIhIB+end1c3Jyc3V4e3+BhYiKjI2NjIuIhYKAfHl2dXNzdHV3en2Ag4aJi4yMjIuJhoSAfnt4dnV0dHV3eXx/gYSHiYuLi4uJh4WCgH16eHZ1dXV3eXt+gIKFh4mKi4qJiIWDgH58enh3dnZ3eHp9f4GDhoeJioqJiIaEgYB9e3l4d3d3eHp8foCChIaHiImIiIaEgoB/fXt5eHh4eXp7fX+Bg4WGh4iIh4aFg4GAfnx7enl5eXp7fX+AgYOFhoeHh4aFg4KAf318e3p6enp7fX6AgIKDhYWGhoWFhIKBgH99fHt7e3t8fH5/gIGCg4SFhYWEg4KBgIB+fXx8fHx8fX5/gICBgoOEhISEg4KBgIB/fn19fX19fX5/gICAgYKDg4ODg4KBgYCAf35+fn1+fn5/f4CAgYGCgoKCgoKBgYCAgH9/f35+f39/gICAgICBgYGBgYGBgICAgICAf39/f3+AgICAgICAgICAgICAgICAgICAgICAgICAgICA")
+mix_rate = 22050

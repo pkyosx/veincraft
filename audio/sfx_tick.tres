@@ -1,31 +1,5 @@
-[gd_resource type="AudioStreamWAV" format=3 uid="uid://wmytcbco68nk"]
-
-[ext_resource type="Script" uid="uid://b8ymrwuipekr8" path="res://addons/godot_sfxr/SfxrAudioStream.gd" id="1_cl0ab"]
+[gd_resource type="AudioStreamWAV" format=4 uid="uid://wmytcbco68nk"]
 
 [resource]
-script = ExtResource("1_cl0ab")
-wave/type = 0
-sample_params/sound_vol = 0.25
-sample_params/sample_rate = 44100.0
-envelope/attack_time = 0.0
-envelope/sustain_time = 0.01
-envelope/punch_time = 0.0
-envelope/decay_time = 0.03
-frequency/start_frequency = 0.65
-frequency/min_freq_cutoff = 0.0
-frequency/slide = 0.0
-frequency/delta_slide = 0.0
-vibrato/depth = 0.0
-vibrato/speed = 0.0
-arpeggiation/frequency_mult = 0.0
-arpeggiation/change_speed = 0.0
-duty_cycle/duty_cycle = 0.0
-duty_cycle/sweep = 0.0
-retrigger/rate = 0.0
-flanger/offset = 0.0
-flanger/sweep = 0.0
-low_pass_filter/cutoff_frequency = 1.0
-low_pass_filter/cutoff_sweep = 0.0
-low_pass_filter/resonance = 0.0
-high_pass_filter/cutoff_frequency = 0.0
-high_pass_filter/cutoff_sweep = 0.0
+data = PackedByteArray("gIWKkJWZnqGkp6mqq6uqqaekoZ2ZlI+KhYB8dnFtaGRgXVtZWFdXWFlbXmFkaGxxdnuAhImOkpeanqGjpaanp6alo6Gem5eTj4qFgHx4c29rZ2RhX11cW1tbXV5gY2ZqbnJ2e3+DiIyQlJibnaCho6Ojo6KgnpyZlZKOiYWBfXl1cW1qZ2RiYF9fXl9gYWNmaWxvc3d7f4KGio6SlZianJ6foKCfn52bmZaTkI2JhYF+enZzcGxqZ2VkY2JiYmNkZmhrbXF0d3t/goWJjI+SlZeZm5ycnJybmpmXlJKPjIiFgX97eHVyb2xqaGdmZWVlZmdpa21vcnV4e3+BhIeKjZCSlJaYmZmZmZiXlpSSkI2LiIWBf3x5dnRxb21ramloaGhpamttb3Fzdnl8foCDhomLjpCSk5WWlpaWlpWUkpCOjIqHhIKAfXp4dXNxb25tbGtra2xtbm9xc3V3eXx+gIOFiIqMjo+RkpOTk5OTkpGQjo2LiYaEgoB+e3l3dXNycG9vbm5ubm9wcXN0dnh6fH6AgoSGiIqMjY6PkJGRkZCQj46Ni4mIhoSCgH58enh3dXRzcnFxcHBxcXJzdHZ3eXt9f4CBg4WHiIqLjI2Ojo6Ojo6NjIuKiIeFg4GAf317enh3dnV0c3Nzc3NzdHV2d3h6e31/gIGDhIaHiImKi4yMjIyMjIuKiYiHhoSDgYB/fnx7enl4d3Z1dXV1dXV2d3h4ent8fX+AgYKDhIaHiIiJioqKioqKiYmIh4aFhIKBgIB+fXx7enl4eHd3d3d3d3h4eXp7fH1+f4CAgYKDhIWGh4eIiIiIiIiHh4aGhYSDgoGAgH9+fXx7e3p5eXl5eXl5eXp6e3x8fX5/gICBgoODhIWFhoaGh4eGhoaGhYSEg4KCgYCAf39+fXx8e3t7enp6enp7e3x8fX1+f3+AgIGBgoODhISEhYWFhYWFhYSEg4OCgoGBgICAf35+fX19fHx8fHx8fHx8fX19fn5/gICAgIGBgoKDg4ODhISEhISDg4ODgoKBgYCAgIB/f39+fn59fX19fX19fX1+fn5/f3+AgICAgIGBgYKCgoKCg4ODgoKCgoKBgYGBgICAgIB/f39/fn5+fn5+fn5+fn5/f39/gICAgICAgIGBgYGBgYKCgoKCgYGBgYGBgICAgICAgICAf39/f39/f39/f39/f39/gICAgICAgICAgICAgYGBgYGBgYGBgYGAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==")
+mix_rate = 22050

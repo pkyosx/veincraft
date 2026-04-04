@@ -178,7 +178,7 @@ func _process(delta: float) -> void:
 		var config: Dictionary = GameData.ITEM_CONFIGS[item]
 		spin_display.text = ">> " + config["name"] + " <<"
 		spin_display.add_theme_color_override("font_color", config["color"])
-		Audio.play_sfx("tick", -10.0)
+		get_node("/root/Audio").play_sfx("tick", -12.0)
 
 	if spin_timer >= spin_duration:
 		# Landing — show final result
@@ -186,7 +186,7 @@ func _process(delta: float) -> void:
 		var config: Dictionary = GameData.ITEM_CONFIGS[spin_result]
 		spin_display.text = "★ " + config["name"] + " ★"
 		spin_display.add_theme_color_override("font_color", config["color"].lightened(0.3))
-		Audio.play_sfx("jackpot", 2.0)
+		get_node("/root/Audio").play_sfx("jackpot", -8.0)
 		# Add to bag
 		game.bag.append(spin_result)
 		game._update_hud()
