@@ -20,6 +20,11 @@ var game_over: bool = false
 var selected_bag_index: int = -1
 var hovered_cell: Vector2i = Vector2i(-1, -1)
 
+# Hidden treasures under obstacles
+var hidden_treasures: Dictionary = {}  # Vector2i -> item_type or "gold"
+var treasure_notification: String = ""
+var treasure_notify_timer: float = 0.0
+
 # Path cells set for quick lookup
 var path_set: Dictionary = {}
 
@@ -56,6 +61,19 @@ func _init_grid() -> void:
 	for obs in obstacles:
 		if grid[obs.y][obs.x] == GameData.Cell.EMPTY:
 			grid[obs.y][obs.x] = GameData.Cell.ROCK if randf() > 0.4 else GameData.Cell.TREE
+			# ~40% chance to hide a treasure
+			if randf() < 0.4:
+				var treasure_roll: float = randf()
+				if treasure_roll < 0.3:
+					hidden_treasures[obs] = "gold"  # bonus gold
+				elif treasure_roll < 0.55:
+					hidden_treasures[obs] = GameData.ItemType.TURRET
+				elif treasure_roll < 0.75:
+					hidden_treasures[obs] = GameData.ItemType.UPGRADE_DMG
+				elif treasure_roll < 0.9:
+					hidden_treasures[obs] = GameData.ItemType.UPGRADE_SPEED
+				else:
+					hidden_treasures[obs] = GameData.ItemType.TREBUCHET
 
 func cell_to_world(pos: Vector2i) -> Vector2:
 	return GameData.GRID_OFFSET + Vector2(pos.x * GameData.CELL_SIZE + GameData.CELL_SIZE / 2, pos.y * GameData.CELL_SIZE + GameData.CELL_SIZE / 2)
@@ -111,6 +129,22 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 			return false
 		if grid[pos.y][pos.x] == GameData.Cell.ROCK or grid[pos.y][pos.x] == GameData.Cell.TREE:
 			grid[pos.y][pos.x] = GameData.Cell.EMPTY
+			# Check for hidden treasure
+			if pos in hidden_treasures:
+				var treasure = hidden_treasures[pos]
+				hidden_treasures.erase(pos)
+				if treasure == "gold":
+					gold += 15
+					_show_treasure_notification("Found 15 gold!", pos)
+				else:
+					if bag.size() < GameData.MAX_BAG:
+						bag.append(treasure)
+						var tname: String = GameData.ITEM_CONFIGS[treasure]["name"]
+						_show_treasure_notification("Found " + tname + "!", pos)
+					else:
+						# Bag full — convert to gold
+						gold += 10
+						_show_treasure_notification("Bag full! +10 gold", pos)
 			return true
 		return false
 	return false
@@ -132,6 +166,17 @@ func _recalc_tower_upgrades(tower_pos: Vector2i) -> void:
 			tower[stat] += uc["value"]
 	tower["cooldown"] = max(0.2, tower["cooldown"])
 
+func _show_treasure_notification(text: String, pos: Vector2i) -> void:
+	treasure_notification = text
+	treasure_notify_timer = 2.0
+	# Spawn a floating text at the position
+	var dmg_script: GDScript = load("res://scripts/damage_number.gd")
+	var label: Node2D = Node2D.new()
+	label.set_script(dmg_script)
+	add_child(label)
+	label.setup(text, cell_to_world(pos) + Vector2(0, -20))
+	label.lifetime = 1.5
+
 var wave_composition: Array = []
 
 func start_wave() -> void:
@@ -146,6 +191,8 @@ func start_wave() -> void:
 	_update_hud()
 
 func _process(delta: float) -> void:
+	if treasure_notify_timer > 0:
+		treasure_notify_timer -= delta
 	if game_over:
 		return
 	if phase == "fight":
@@ -307,6 +354,7 @@ func restart() -> void:
 	grid.clear()
 	towers.clear()
 	upgrades.clear()
+	hidden_treasures.clear()
 	bag.clear()
 	gold = GameData.STARTING_GOLD
 	hp = GameData.MAX_HP
@@ -325,7 +373,9 @@ func _draw() -> void:
 	_draw_path_arrows()
 	_draw_towers()
 	_draw_upgrades()
+	_draw_treasure_sparkles()
 	_draw_hover()
+	_draw_notification()
 
 func _draw_grid() -> void:
 	for y in range(GameData.GRID_H):
@@ -418,3 +468,25 @@ func _draw_hover() -> void:
 			color = Color(1, 0.2, 0.2, 0.2)
 	draw_rect(rect, color)
 	draw_rect(rect, Color(1, 1, 1, 0.4), false, 2.0)
+
+func _draw_treasure_sparkles() -> void:
+	var t: float = Time.get_ticks_msec() / 1000.0
+	for pos in hidden_treasures:
+		if not is_valid_cell(pos):
+			continue
+		if grid[pos.y][pos.x] != GameData.Cell.ROCK and grid[pos.y][pos.x] != GameData.Cell.TREE:
+			continue
+		var center: Vector2 = cell_to_world(pos)
+		# Subtle twinkling sparkle — 2 small dots that pulse
+		var sparkle_alpha: float = 0.3 + sin(t * 3.0 + pos.x * 1.5) * 0.25
+		var offset1: Vector2 = Vector2(sin(t * 2.0 + pos.y) * 8, cos(t * 1.7 + pos.x) * 6)
+		var offset2: Vector2 = Vector2(cos(t * 2.5 + pos.x) * 10, sin(t * 1.9 + pos.y) * 7)
+		draw_circle(center + offset1, 2.0, Color(1.0, 0.9, 0.4, sparkle_alpha))
+		draw_circle(center + offset2, 1.5, Color(1.0, 1.0, 0.8, sparkle_alpha * 0.7))
+
+func _draw_notification() -> void:
+	if treasure_notify_timer > 0 and treasure_notification != "":
+		var alpha: float = min(1.0, treasure_notify_timer)
+		var pos: Vector2 = Vector2(450, 40)
+		draw_string(ThemeDB.fallback_font, pos + Vector2(1, 1), treasure_notification, HORIZONTAL_ALIGNMENT_CENTER, -1, 20, Color(0, 0, 0, alpha * 0.5))
+		draw_string(ThemeDB.fallback_font, pos, treasure_notification, HORIZONTAL_ALIGNMENT_CENTER, -1, 20, Color(1.0, 0.9, 0.2, alpha))
