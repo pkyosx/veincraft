@@ -101,44 +101,58 @@ const ENEMY_PATH: Array[Vector2i] = [
 ]
 
 # Enemy types
-enum EnemyType { NORMAL, FAST, TANK, GOBLIN }
+enum EnemyType { SLIME, SKELETON, GOBLIN, WOLF, MUSHROOM, BAT, ORC, WRAITH, DRAGON, GOLEM }
 
 const ENEMY_CONFIGS: Dictionary = {
-	EnemyType.NORMAL: {
-		"name": "Soldier",
-		"hp_mult": 1.0,
-		"speed_mult": 1.0,
-		"color": Color(0.3, 0.7, 0.15),
-		"color_light": Color(0.4, 0.85, 0.25),
-		"radius": 10.0,
-		"gold": 3,
+	EnemyType.SLIME: {
+		"name": "Slime", "hp_mult": 0.8, "speed_mult": 0.9,
+		"color": Color(0.4, 0.7, 0.3), "color_light": Color(0.5, 0.8, 0.4),
+		"radius": 10.0, "gold": 2, "sprite": "monster_slime.png",
 	},
-	EnemyType.FAST: {
-		"name": "Scout",
-		"hp_mult": 0.5,
-		"speed_mult": 1.8,
-		"color": Color(0.8, 0.6, 0.1),
-		"color_light": Color(0.95, 0.75, 0.2),
-		"radius": 7.0,
-		"gold": 2,
-	},
-	EnemyType.TANK: {
-		"name": "Brute",
-		"hp_mult": 2.5,
-		"speed_mult": 0.6,
-		"color": Color(0.5, 0.15, 0.6),
-		"color_light": Color(0.65, 0.25, 0.75),
-		"radius": 14.0,
-		"gold": 6,
+	EnemyType.SKELETON: {
+		"name": "Skeleton", "hp_mult": 0.6, "speed_mult": 1.6,
+		"color": Color(0.8, 0.8, 0.7), "color_light": Color(0.9, 0.9, 0.8),
+		"radius": 10.0, "gold": 3, "sprite": "monster_skeleton.png",
 	},
 	EnemyType.GOBLIN: {
-		"name": "Goblin",
-		"hp_mult": 0.8,
-		"speed_mult": 1.3,
-		"color": Color(0.4, 0.55, 0.25),
-		"color_light": Color(0.5, 0.65, 0.35),
-		"radius": 10.0,
-		"gold": 4,
+		"name": "Goblin", "hp_mult": 1.0, "speed_mult": 1.2,
+		"color": Color(0.4, 0.55, 0.25), "color_light": Color(0.5, 0.65, 0.35),
+		"radius": 10.0, "gold": 3, "sprite": "monster_goblin.png",
+	},
+	EnemyType.WOLF: {
+		"name": "Wolf", "hp_mult": 0.7, "speed_mult": 2.0,
+		"color": Color(0.5, 0.5, 0.55), "color_light": Color(0.65, 0.65, 0.7),
+		"radius": 10.0, "gold": 3, "sprite": "monster_wolf.png",
+	},
+	EnemyType.MUSHROOM: {
+		"name": "Mushroom", "hp_mult": 2.0, "speed_mult": 0.6,
+		"color": Color(0.5, 0.3, 0.6), "color_light": Color(0.6, 0.4, 0.7),
+		"radius": 12.0, "gold": 5, "sprite": "monster_mushroom.png",
+	},
+	EnemyType.BAT: {
+		"name": "Bat", "hp_mult": 0.5, "speed_mult": 1.8,
+		"color": Color(0.3, 0.2, 0.4), "color_light": Color(0.4, 0.3, 0.5),
+		"radius": 10.0, "gold": 3, "sprite": "monster_bat.png",
+	},
+	EnemyType.ORC: {
+		"name": "Orc", "hp_mult": 2.5, "speed_mult": 0.7,
+		"color": Color(0.3, 0.5, 0.3), "color_light": Color(0.4, 0.6, 0.4),
+		"radius": 14.0, "gold": 6, "sprite": "monster_orc.png",
+	},
+	EnemyType.WRAITH: {
+		"name": "Wraith", "hp_mult": 0.8, "speed_mult": 1.7,
+		"color": Color(0.3, 0.3, 0.4), "color_light": Color(0.4, 0.4, 0.5),
+		"radius": 10.0, "gold": 4, "sprite": "monster_wraith.png",
+	},
+	EnemyType.DRAGON: {
+		"name": "Dragon", "hp_mult": 3.0, "speed_mult": 0.8,
+		"color": Color(0.7, 0.3, 0.2), "color_light": Color(0.8, 0.4, 0.3),
+		"radius": 14.0, "gold": 8, "sprite": "monster_dragon.png",
+	},
+	EnemyType.GOLEM: {
+		"name": "Golem", "hp_mult": 3.5, "speed_mult": 0.5,
+		"color": Color(0.4, 0.4, 0.45), "color_light": Color(0.5, 0.5, 0.55),
+		"radius": 14.0, "gold": 8, "sprite": "monster_golem.png",
 	},
 }
 
@@ -154,34 +168,21 @@ static func get_base_speed(wave: int) -> float:
 static func get_wave_composition(wave: int) -> Array:
 	var comp: Array = []
 	var total: int = get_enemies_per_wave(wave)
-	if wave <= 2:
-		# Early: all normal
-		for i in range(total):
-			comp.append(EnemyType.NORMAL)
-	elif wave <= 5:
-		# Mix normal + fast + goblin
-		for i in range(total):
-			match i % 4:
-				0: comp.append(EnemyType.FAST)
-				1: comp.append(EnemyType.GOBLIN)
-				_: comp.append(EnemyType.NORMAL)
-	elif wave <= 10:
-		# Mix all four
-		for i in range(total):
-			match i % 6:
-				0: comp.append(EnemyType.FAST)
-				1: comp.append(EnemyType.TANK)
-				2: comp.append(EnemyType.GOBLIN)
-				_: comp.append(EnemyType.NORMAL)
-	else:
-		# Late: heavy mix
-		for i in range(total):
-			match i % 5:
-				0: comp.append(EnemyType.FAST)
-				1: comp.append(EnemyType.TANK)
-				2: comp.append(EnemyType.TANK)
-				3: comp.append(EnemyType.GOBLIN)
-				_: comp.append(EnemyType.NORMAL)
+	# Each wave introduces a new monster type
+	var wave_pool: Array = []
+	match wave:
+		1, 2: wave_pool = [EnemyType.SLIME]
+		3: wave_pool = [EnemyType.SLIME, EnemyType.SKELETON]
+		4: wave_pool = [EnemyType.SLIME, EnemyType.SKELETON, EnemyType.GOBLIN]
+		5: wave_pool = [EnemyType.GOBLIN, EnemyType.WOLF, EnemyType.SKELETON]
+		6: wave_pool = [EnemyType.WOLF, EnemyType.MUSHROOM, EnemyType.GOBLIN]
+		7: wave_pool = [EnemyType.BAT, EnemyType.MUSHROOM, EnemyType.WOLF]
+		8: wave_pool = [EnemyType.ORC, EnemyType.BAT, EnemyType.GOBLIN]
+		9: wave_pool = [EnemyType.WRAITH, EnemyType.ORC, EnemyType.BAT]
+		10: wave_pool = [EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WRAITH]
+		_: wave_pool = [EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WRAITH, EnemyType.ORC]
+	for i in range(total):
+		comp.append(wave_pool[i % wave_pool.size()])
 	return comp
 
 static func roll_shop_item() -> int:

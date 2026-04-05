@@ -33,9 +33,11 @@ var anim_frame: int = 0
 const ANIM_SPEED: float = 0.2  # seconds per frame
 
 # Sprite textures (loaded once, shared)
-static var pumpkin_texture: Texture2D = null
 static var enemy_textures: Dictionary = {}  # EnemyType -> Texture2D
-static var enemy_hframes: Dictionary = {}   # EnemyType -> int
+
+# Status effect visuals
+var shock_timer: float = 0.0
+const SHOCK_DURATION: float = 0.3
 
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
@@ -52,36 +54,21 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 	radius = config["radius"]
 	gold_value = config["gold"]
 
-	# Setup sprites for all enemy types
-	if enemy_textures.is_empty():
-		enemy_textures[GameData.EnemyType.NORMAL] = load("res://sprites/enemy_normal.png")
-		enemy_textures[GameData.EnemyType.FAST] = load("res://sprites/enemy_fast.png")
-		enemy_textures[GameData.EnemyType.TANK] = load("res://sprites/enemy_tank.png")
-		enemy_textures[GameData.EnemyType.GOBLIN] = load("res://sprites/enemy_goblin.png")
-		enemy_hframes[GameData.EnemyType.NORMAL] = 6
-		enemy_hframes[GameData.EnemyType.FAST] = 4
-		enemy_hframes[GameData.EnemyType.TANK] = 6
-		enemy_hframes[GameData.EnemyType.GOBLIN] = 6
+	# Load sprite from config
+	if not enemy_textures.has(enemy_type):
+		var sprite_file: String = config.get("sprite", "")
+		if sprite_file != "":
+			enemy_textures[enemy_type] = load("res://sprites/" + sprite_file)
 
 	var tex: Texture2D = enemy_textures.get(enemy_type, null)
 	if tex:
 		sprite = Sprite2D.new()
 		sprite.texture = tex
-		sprite.hframes = enemy_hframes.get(enemy_type, 6)
+		sprite.hframes = 1
 		sprite.frame = 0
-		# Goblin uses a grid sheet (6x3): set vframes and use row 2 (run)
-		if enemy_type == GameData.EnemyType.GOBLIN:
-			sprite.vframes = 3
-			sprite.frame = 6  # row 2 start (run animation)
-		var scale_map: Dictionary = {
-			GameData.EnemyType.NORMAL: Vector2(0.4, 0.4),
-			GameData.EnemyType.FAST: Vector2(0.35, 0.35),
-			GameData.EnemyType.TANK: Vector2(0.5, 0.5),
-			GameData.EnemyType.GOBLIN: Vector2(1.0, 1.0),
-		}
-		sprite.scale = scale_map.get(enemy_type, Vector2(0.4, 0.4))
+		sprite.scale = Vector2(1.2, 1.2)
 		add_child(sprite)
-		radius = 24.0 if enemy_type != GameData.EnemyType.FAST else 18.0
+		radius = 20.0
 
 	if path.size() > 0:
 		global_position = game.cell_to_world(path[0])
@@ -90,6 +77,9 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 func apply_slow(factor: float, duration: float) -> void:
 	slow_factor = 1.0 - factor
 	slow_timer = duration
+
+func apply_shock() -> void:
+	shock_timer = SHOCK_DURATION
 
 func _process(delta: float) -> void:
 	if is_dead or reached_end:
@@ -122,31 +112,36 @@ func _process(delta: float) -> void:
 	if sprite and dir.x != 0:
 		sprite.flip_h = dir.x < 0
 
+	# Shock effect countdown
+	if shock_timer > 0:
+		shock_timer -= delta
+
+	# Visual effects on sprite
 	if flash_timer > 0:
 		flash_timer -= delta
 		if sprite:
 			sprite.modulate = Color.WHITE.lerp(Color(1, 0.3, 0.3), flash_timer / FLASH_DURATION)
+	elif shock_timer > 0:
+		if sprite:
+			# Electric shock: yellow flash with jitter
+			var shock_mix: float = shock_timer / SHOCK_DURATION
+			sprite.modulate = Color(1.0, 1.0, 0.5).lerp(Color.WHITE, 1.0 - shock_mix)
+			sprite.offset = Vector2(randf_range(-2, 2), randf_range(-2, 2))
+		else:
+			pass
 	elif slow_timer > 0:
 		if sprite:
-			sprite.modulate = Color(0.6, 0.8, 1.0)  # blue tint when slowed
+			# Frozen: blue tint + slight scale pulse
+			sprite.modulate = Color(0.5, 0.7, 1.0)
+			var pulse: float = 1.0 + sin(slow_timer * 8.0) * 0.05
+			sprite.scale = Vector2(1.2 * pulse, 1.2 * pulse)
 		else:
-			pass  # handled in _draw
+			pass
 	else:
 		if sprite:
 			sprite.modulate = Color.WHITE
-
-	# Animate sprite frames
-	if sprite:
-		anim_timer += delta
-		if anim_timer >= ANIM_SPEED:
-			anim_timer = 0.0
-			if enemy_type == GameData.EnemyType.GOBLIN:
-				# Grid sheet: cycle through run row (frames 6-11)
-				anim_frame = (anim_frame + 1) % sprite.hframes
-				sprite.frame = 6 + anim_frame  # row 2 offset
-			else:
-				anim_frame = (anim_frame + 1) % sprite.hframes
-				sprite.frame = anim_frame
+			sprite.offset = Vector2.ZERO
+			sprite.scale = Vector2(1.2, 1.2)
 
 	queue_redraw()
 
@@ -172,36 +167,30 @@ func take_damage(amount: int) -> void:
 		tween.parallel().tween_property(self, "modulate:a", 0.0, 0.15)
 
 func _draw() -> void:
-	# Only draw circles for non-sprite enemies (FAST, TANK)
-	if sprite:
-		# Just draw HP bar
-		_draw_hp_bar()
-		return
+	# Status effect overlays (drawn on top of sprite)
+	if slow_timer > 0:
+		# Frozen: draw ice crystals around character
+		var ice_color: Color = Color(0.6, 0.85, 1.0, 0.6)
+		draw_circle(Vector2(-12, -8), 4, ice_color)
+		draw_circle(Vector2(10, -5), 3, ice_color)
+		draw_circle(Vector2(-5, 10), 3.5, ice_color)
+		draw_circle(Vector2(8, 8), 2.5, ice_color)
+		# Ice border around character
+		draw_arc(Vector2.ZERO, radius + 4, 0, TAU, 16, Color(0.5, 0.8, 1.0, 0.4), 2.0)
 
-	var draw_color: Color = body_color
-	var draw_light: Color = body_color_light
+	if shock_timer > 0:
+		# Electric: draw lightning bolts
+		var spark_color: Color = Color(1.0, 1.0, 0.3, shock_timer / SHOCK_DURATION)
+		var t: float = shock_timer * 20.0
+		for i in range(4):
+			var angle: float = t + i * TAU / 4
+			var from: Vector2 = Vector2(cos(angle) * 8, sin(angle) * 8)
+			var mid: Vector2 = Vector2(cos(angle + 0.3) * 16, sin(angle + 0.3) * 16)
+			var to: Vector2 = Vector2(cos(angle + 0.1) * 22, sin(angle + 0.1) * 22)
+			draw_line(from, mid, spark_color, 2.0)
+			draw_line(mid, to, spark_color, 1.5)
 
-	if flash_timer > 0:
-		var flash_mix: float = flash_timer / FLASH_DURATION
-		draw_color = draw_color.lerp(Color.WHITE, flash_mix * 0.8)
-		draw_light = draw_light.lerp(Color.WHITE, flash_mix * 0.8)
-
-	# Shadow
-	draw_circle(Vector2(1.5, 1.5), radius, Color(0, 0, 0, 0.2))
-	# Body
-	draw_circle(Vector2.ZERO, radius, draw_color)
-	# Highlight
-	draw_circle(Vector2(-radius * 0.2, -radius * 0.2), radius * 0.5, draw_light)
-
-	# Tank: extra ring
-	if enemy_type == GameData.EnemyType.TANK:
-		draw_arc(Vector2.ZERO, radius + 2, 0, TAU, 24, body_color.darkened(0.3), 2.0)
-
-	# Fast: speed lines
-	if enemy_type == GameData.EnemyType.FAST:
-		draw_line(Vector2(-radius - 4, -2), Vector2(-radius - 10, -2), body_color_light, 1.5)
-		draw_line(Vector2(-radius - 3, 3), Vector2(-radius - 8, 3), body_color_light, 1.5)
-
+	# HP bar
 	_draw_hp_bar()
 
 func _draw_hp_bar() -> void:
