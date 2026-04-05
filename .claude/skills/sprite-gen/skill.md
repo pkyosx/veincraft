@@ -62,8 +62,10 @@ Layout the sprite sheet as a GRID like a classic game sprite sheet:
 
 Each frame should be exactly 64x64 pixels. Total image: 384x448 pixels
 (6 columns x 7 rows).
-Transparent background. Every frame must have the character centered in
-its 64x64 cell.
+IMPORTANT: Use a solid bright magenta (#FF00FF) background color for
+the entire image. Do NOT use transparency or checkerboard patterns.
+Fill all empty space with pure magenta (#FF00FF).
+Every frame must have the character centered in its 64x64 cell.
 The character should match the proportions and style of the reference
 image exactly.
 ```
@@ -73,6 +75,7 @@ image exactly.
 The attached image shows characters from our game (Tiny Swords art style).
 Match this EXACT art style. Create [N] NEW items/characters in a single row,
 each 64x64 pixels (total: [N*64]x64).
+Use solid bright magenta (#FF00FF) background, NOT transparency.
 From left to right:
 1. [Name] — [description]
 2. [Name] — [description]
@@ -140,24 +143,30 @@ for x in range(img.get_width()):
         var r = int(c.r8)
         var g = int(c.g8)
         var b = int(c.b8)
-        var max_diff = max(abs(r - g), max(abs(g - b), abs(r - b)))
-        # Grey pixels: R approx G approx B, not too dark or bright
-        if max_diff < 25:
-            var avg = (r + g + b) / 3
-            if avg > 70 and avg < 240:
-                img.set_pixel(x, y, Color(0, 0, 0, 0))
-                removed += 1
+        # Remove magenta background: high R, low G, high B
+        if r > 200 and g < 80 and b > 200:
+            img.set_pixel(x, y, Color(0, 0, 0, 0))
+            removed += 1
 
 img.save_png("res://sprites/[OUTPUT_FILENAME].png")
 _mcp_print("Removed " + str(removed) + " background pixels")
 ```
 
-**Thresholds to adjust if needed:**
-- `max_diff < 25` — how "grey" a pixel must be (lower = stricter)
-- `avg > 70` — don't remove very dark pixels (shadow detail)
-- `avg < 240` — don't remove very bright pixels (white highlights)
+**Why magenta (#FF00FF):**
+- Gemini can't generate true transparency — it renders checkerboard
+- Magenta is a classic "chroma key" color rarely used in game art
+- Exact color matching is far more reliable than fuzzy grey detection
+- No risk of accidentally removing sprite detail (shadows, highlights)
 
-If sprites lose detail, increase the lower bound (70 → 90) or decrease max_diff (25 → 15).
+**Fallback (if Gemini still renders checkerboard):**
+Use the old grey removal approach with wider thresholds:
+```gdscript
+var max_diff = max(abs(r - g), max(abs(g - b), abs(r - b)))
+if max_diff < 35:
+    var avg = (r + g + b) / 3
+    if avg > 55 and avg < 250:
+        img.set_pixel(x, y, Color(0, 0, 0, 0))
+```
 
 #### Step 6: Import & Verify
 
