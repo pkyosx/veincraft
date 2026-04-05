@@ -57,9 +57,11 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 		enemy_textures[GameData.EnemyType.NORMAL] = load("res://sprites/enemy_normal.png")
 		enemy_textures[GameData.EnemyType.FAST] = load("res://sprites/enemy_fast.png")
 		enemy_textures[GameData.EnemyType.TANK] = load("res://sprites/enemy_tank.png")
+		enemy_textures[GameData.EnemyType.GOBLIN] = load("res://sprites/enemy_goblin.png")
 		enemy_hframes[GameData.EnemyType.NORMAL] = 6
 		enemy_hframes[GameData.EnemyType.FAST] = 4
 		enemy_hframes[GameData.EnemyType.TANK] = 6
+		enemy_hframes[GameData.EnemyType.GOBLIN] = 6
 
 	var tex: Texture2D = enemy_textures.get(enemy_type, null)
 	if tex:
@@ -67,10 +69,15 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 		sprite.texture = tex
 		sprite.hframes = enemy_hframes.get(enemy_type, 6)
 		sprite.frame = 0
+		# Goblin uses a grid sheet (6x3): set vframes and use row 2 (run)
+		if enemy_type == GameData.EnemyType.GOBLIN:
+			sprite.vframes = 3
+			sprite.frame = 6  # row 2 start (run animation)
 		var scale_map: Dictionary = {
 			GameData.EnemyType.NORMAL: Vector2(0.4, 0.4),
 			GameData.EnemyType.FAST: Vector2(0.35, 0.35),
 			GameData.EnemyType.TANK: Vector2(0.5, 0.5),
+			GameData.EnemyType.GOBLIN: Vector2(1.0, 1.0),
 		}
 		sprite.scale = scale_map.get(enemy_type, Vector2(0.4, 0.4))
 		add_child(sprite)
@@ -111,6 +118,10 @@ func _process(delta: float) -> void:
 		global_position += dir.normalized() * move_dist
 		path_progress += move_dist / GameData.CELL_SIZE
 
+	# Flip sprite based on movement direction
+	if sprite and dir.x != 0:
+		sprite.flip_h = dir.x < 0
+
 	if flash_timer > 0:
 		flash_timer -= delta
 		if sprite:
@@ -129,8 +140,13 @@ func _process(delta: float) -> void:
 		anim_timer += delta
 		if anim_timer >= ANIM_SPEED:
 			anim_timer = 0.0
-			anim_frame = (anim_frame + 1) % sprite.hframes
-			sprite.frame = anim_frame
+			if enemy_type == GameData.EnemyType.GOBLIN:
+				# Grid sheet: cycle through run row (frames 6-11)
+				anim_frame = (anim_frame + 1) % sprite.hframes
+				sprite.frame = 6 + anim_frame  # row 2 offset
+			else:
+				anim_frame = (anim_frame + 1) % sprite.hframes
+				sprite.frame = anim_frame
 
 	queue_redraw()
 

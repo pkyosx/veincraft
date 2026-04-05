@@ -101,7 +101,7 @@ const ENEMY_PATH: Array[Vector2i] = [
 ]
 
 # Enemy types
-enum EnemyType { NORMAL, FAST, TANK }
+enum EnemyType { NORMAL, FAST, TANK, GOBLIN }
 
 const ENEMY_CONFIGS: Dictionary = {
 	EnemyType.NORMAL: {
@@ -131,6 +131,15 @@ const ENEMY_CONFIGS: Dictionary = {
 		"radius": 14.0,
 		"gold": 6,
 	},
+	EnemyType.GOBLIN: {
+		"name": "Goblin",
+		"hp_mult": 0.8,
+		"speed_mult": 1.3,
+		"color": Color(0.4, 0.55, 0.25),
+		"color_light": Color(0.5, 0.65, 0.35),
+		"radius": 10.0,
+		"gold": 4,
+	},
 }
 
 static func get_enemies_per_wave(wave: int) -> int:
@@ -150,26 +159,28 @@ static func get_wave_composition(wave: int) -> Array:
 		for i in range(total):
 			comp.append(EnemyType.NORMAL)
 	elif wave <= 5:
-		# Mix normal + fast
+		# Mix normal + fast + goblin
 		for i in range(total):
-			if i % 3 == 0:
-				comp.append(EnemyType.FAST)
-			else:
-				comp.append(EnemyType.NORMAL)
+			match i % 4:
+				0: comp.append(EnemyType.FAST)
+				1: comp.append(EnemyType.GOBLIN)
+				_: comp.append(EnemyType.NORMAL)
 	elif wave <= 10:
-		# Mix all three
+		# Mix all four
 		for i in range(total):
-			match i % 5:
+			match i % 6:
 				0: comp.append(EnemyType.FAST)
 				1: comp.append(EnemyType.TANK)
+				2: comp.append(EnemyType.GOBLIN)
 				_: comp.append(EnemyType.NORMAL)
 	else:
 		# Late: heavy mix
 		for i in range(total):
-			match i % 4:
+			match i % 5:
 				0: comp.append(EnemyType.FAST)
 				1: comp.append(EnemyType.TANK)
 				2: comp.append(EnemyType.TANK)
+				3: comp.append(EnemyType.GOBLIN)
 				_: comp.append(EnemyType.NORMAL)
 	return comp
 
