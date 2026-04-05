@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VeinCraft — Character Design Sheets</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 40px; max-width: 1100px; margin: 0 auto; }
+  h1 { color: #f0c040; font-size: 2em; margin-bottom: 8px; }
+  h2 { color: #80c0ff; font-size: 1.4em; margin-top: 40px; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+  .subtitle { color: #888; font-size: 1em; margin-bottom: 30px; }
+  .section { background: #222240; border-radius: 12px; padding: 24px; margin: 20px 0; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8em; font-weight: bold; margin-left: 8px; }
+  .badge-done { background: #2a5a2a; color: #80ff80; }
+  .badge-pending { background: #5a4a2a; color: #ffc080; }
+
+  .ref-row { display: flex; gap: 16px; align-items: center; margin-bottom: 16px; }
+  .ref-row img { image-rendering: pixelated; border: 2px solid #555; border-radius: 4px; }
+  .ref-row .label { color: #aaa; font-size: 0.85em; }
+
+  .design-sheet { margin: 16px 0; text-align: center; }
+  .design-sheet img { image-rendering: pixelated; border: 2px solid #444; border-radius: 4px; }
+  .design-sheet .caption { color: #888; font-size: 0.8em; margin-top: 8px; }
+
+  .options { margin: 16px 0; }
+  .options img { image-rendering: pixelated; border: 2px solid #444; border-radius: 4px; }
+  .options .caption { color: #888; font-size: 0.8em; margin-top: 8px; }
+
+  .status { background: #333355; border-radius: 8px; padding: 16px; margin-top: 30px; color: #ccc; font-size: 0.9em; line-height: 1.8; }
+  .status strong { color: #f0c040; }
+  .check { color: #4caf50; }
+  .pending { color: #ff9800; }
+
+  .views-label { display: flex; justify-content: space-around; max-width: 460px; margin: 4px auto 0; color: #aaa; font-size: 0.8em; }
+</style>
+</head>
+<body>
+
+<h1>Character Design Sheets</h1>
+<div class="subtitle">Style C (Cute / Kawaii) — rounder, softer, maximum cuteness</div>
+
+<!-- ==================== PAWN ==================== -->
+<h2>Pawn (Normal Enemy) <span class="badge badge-done">Turnaround Done</span></h2>
+<div class="section">
+  <div class="ref-row">
+    <span class="label">Original sprite:</span>
+    <img src="../enemy_normal.png" height="64">
+    <span class="label">Style options (chose C):</span>
+    <img src="pawn_front_options.png" height="64">
+  </div>
+
+  <h3 style="color:#c0c0c0; margin-bottom:8px;">Turnaround — Style C</h3>
+  <div class="design-sheet">
+    <img src="pawn_design.png" height="180" alt="Pawn turnaround">
+    <div class="views-label">
+      <span>FRONT</span><span>BACK</span><span>LEFT</span><span>RIGHT</span>
+    </div>
+    <div class="caption">4 views, magenta BG, Style C kawaii</div>
+  </div>
+</div>
+
+<!-- ==================== WARRIOR ==================== -->
+<h2>Warrior (Tank Enemy) <span class="badge badge-done">Turnaround Done</span></h2>
+<div class="section">
+  <div class="ref-row">
+    <span class="label">Original sprite:</span>
+    <img src="../enemy_tank.png" height="64">
+    <span class="label">Style options (chose C):</span>
+    <img src="warrior_front_options.png" height="64">
+  </div>
+
+  <h3 style="color:#c0c0c0; margin-bottom:8px;">Turnaround — Style C</h3>
+  <div class="design-sheet">
+    <img src="warrior_design.png" height="180" alt="Warrior turnaround">
+    <div class="views-label">
+      <span>FRONT</span><span>BACK</span><span>LEFT</span><span>RIGHT</span>
+    </div>
+    <div class="caption">4 views, magenta BG, Style C kawaii</div>
+  </div>
+</div>
+
+<!-- ==================== STATUS ==================== -->
+<div class="status">
+  <strong>Pipeline Progress:</strong><br>
+  <span class="check">&#10003;</span> Front view options generated (4 styles each)<br>
+  <span class="check">&#10003;</span> Style C selected for both characters<br>
+  <span class="check">&#10003;</span> Pawn turnaround (FRONT / BACK / LEFT / RIGHT)<br>
+  <span class="check">&#10003;</span> Warrior turnaround (FRONT / BACK / LEFT / RIGHT)<br>
+  <span class="pending">&#9675;</span> Generate 7-row animation sheet for Pawn<br>
+  <span class="pending">&#9675;</span> Generate 7-row animation sheet for Warrior<br>
+  <span class="pending">&#9675;</span> Process sprites (resize, remove magenta, import to Godot)<br>
+  <span class="pending">&#9675;</span> Integrate into game code
+</div>
+
+</body>
+</html>

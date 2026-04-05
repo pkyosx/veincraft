@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VeinCraft Art Direction</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 40px; max-width: 1200px; margin: 0 auto; }
+  h1 { color: #f0c040; font-size: 2.2em; margin-bottom: 8px; }
+  h2 { color: #80c0ff; font-size: 1.5em; margin-top: 50px; margin-bottom: 16px; border-bottom: 2px solid #333; padding-bottom: 8px; }
+  h3 { color: #c0c0c0; margin-top: 24px; margin-bottom: 12px; }
+  .subtitle { color: #888; font-size: 1.1em; margin-bottom: 30px; }
+  .section { background: #222240; border-radius: 12px; padding: 24px; margin: 20px 0; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .card { background: #2a2a4a; border-radius: 8px; padding: 16px; text-align: center; }
+  .card img { image-rendering: pixelated; border: 2px solid #444; border-radius: 4px; }
+  .card .label { margin-top: 8px; font-size: 0.85em; color: #aaa; }
+  .card .name { font-weight: bold; color: #e0e0e0; margin-top: 4px; }
+
+  /* Terrain chooser */
+  .terrain-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin: 16px 0; }
+  .terrain-card { background: #2a2a4a; border-radius: 12px; padding: 16px; text-align: center; border: 3px solid transparent; cursor: pointer; transition: all 0.2s; }
+  .terrain-card:hover { border-color: #f0c040; transform: scale(1.03); }
+  .terrain-card img { image-rendering: pixelated; width: 128px; height: 128px; border-radius: 4px; }
+  .terrain-card .element { font-size: 2em; margin-bottom: 4px; }
+  .terrain-card .zh { font-size: 1.4em; color: #f0c040; }
+  .terrain-card .en { font-size: 0.9em; color: #aaa; margin-top: 2px; }
+  .terrain-card .desc { font-size: 0.75em; color: #777; margin-top: 6px; line-height: 1.4; }
+  .terrain-card.metal .element { color: #c0c0d0; }
+  .terrain-card.wood .element { color: #60b040; }
+  .terrain-card.water .element { color: #40a0e0; }
+  .terrain-card.fire .element { color: #e06030; }
+  .terrain-card.earth .element { color: #c09050; }
+
+  /* Color palette */
+  .swatch-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+  .swatch { width: 90px; height: 55px; border-radius: 6px; border: 2px solid #555; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 4px; font-size: 0.65em; color: #fff; text-shadow: 1px 1px 2px #000; }
+
+  /* Pipeline */
+  .pipeline { display: flex; gap: 8px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+  .step { background: #333366; border-radius: 8px; padding: 14px 16px; text-align: center; min-width: 100px; }
+  .step .num { font-size: 1.8em; color: #f0c040; }
+  .step .desc { font-size: 0.8em; color: #ccc; margin-top: 4px; }
+  .arrow { font-size: 1.8em; color: #555; }
+
+  /* Tables */
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  th, td { padding: 8px 12px; border: 1px solid #444; text-align: left; }
+  th { background: #333355; color: #f0c040; }
+  td { background: #2a2a4a; }
+
+  /* Rules */
+  .rules { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .do { color: #4caf50; }
+  .dont { color: #f44336; }
+  ul { padding-left: 20px; line-height: 1.8; }
+
+  .sprite-sheet { background: #1a1a1a; padding: 8px; border-radius: 4px; display: inline-block; }
+  .sprite-sheet img { image-rendering: pixelated; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; margin-left: 8px; }
+  .tag-tiny { background: #2a5a2a; color: #80ff80; }
+  .tag-gemini { background: #4a2a5a; color: #c080ff; }
+  .tag-proc { background: #5a4a2a; color: #ffc080; }
+</style>
+</head>
+<body>
+
+<h1>VeinCraft Art Direction</h1>
+<div class="subtitle">Cute Medieval Fantasy &mdash; Tiny Swords style</div>
+
+<!-- ==================== MONSTERS ==================== -->
+<h2>Monsters</h2>
+<div class="section">
+  <div class="row">
+    <div class="card">
+      <img src="enemy_normal.png" height="96">
+      <div class="name">Pawn <span class="tag tag-tiny">Tiny Swords</span></div>
+      <div class="label">NORMAL &bull; 6 frames &bull; Purple<br>HP x1.0 &bull; Speed x1.0</div>
+    </div>
+    <div class="card">
+      <img src="enemy_fast.png" height="96">
+      <div class="name">Archer <span class="tag tag-tiny">Tiny Swords</span></div>
+      <div class="label">FAST &bull; 4 frames &bull; Yellow<br>HP x0.5 &bull; Speed x1.8</div>
+    </div>
+    <div class="card">
+      <img src="enemy_tank.png" height="96">
+      <div class="name">Warrior <span class="tag tag-tiny">Tiny Swords</span></div>
+      <div class="label">TANK &bull; 6 frames &bull; Black<br>HP x2.5 &bull; Speed x0.6</div>
+    </div>
+    <div class="card">
+      <img src="enemy_goblin.png" height="96">
+      <div class="name">Goblin <span class="tag tag-gemini">Gemini AI</span></div>
+      <div class="label">GOBLIN &bull; 6x3 grid &bull; Green<br>HP x0.8 &bull; Speed x1.3</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOWERS ==================== -->
+<h2>Towers</h2>
+<div class="section">
+  <div class="row">
+    <div class="card">
+      <div class="sprite-sheet">
+        <img src="tower_sheet.png" height="96">
+      </div>
+      <div class="name">Tower Sheet <span class="tag tag-gemini">Gemini AI</span></div>
+      <div class="label">Turret &bull; Trebuchet &bull; Frost &bull; Tesla<br>256x64 sprite sheet, 4 types</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TERRAIN ==================== -->
+<h2>Terrain &mdash; Five Elements (Pick Your Favorites)</h2>
+<div class="section">
+  <p style="color:#aaa; margin-bottom:16px;">Each element has 4 tile variants (2x2). These will be used as ground tiles for different map zones. Click to inspect.</p>
+  <div class="terrain-grid">
+    <div class="terrain-card metal">
+      <div class="element">&#x2699;</div>
+      <img src="terrain_metal.png">
+      <div class="zh">金 Metal</div>
+      <div class="en">Industrial / Metallic</div>
+      <div class="desc">Silver tiles with rivets, grates, gold accents. Fortress or factory zones.</div>
+    </div>
+    <div class="terrain-card wood">
+      <div class="element">&#x1F333;</div>
+      <img src="terrain_wood.png">
+      <div class="zh">木 Wood</div>
+      <div class="en">Forest / Nature</div>
+      <div class="desc">Lush grass with flowers, leaves, mushrooms. Classic forest path.</div>
+    </div>
+    <div class="terrain-card water">
+      <div class="element">&#x1F30A;</div>
+      <img src="terrain_water.png">
+      <div class="zh">水 Water</div>
+      <div class="en">Ocean / River</div>
+      <div class="desc">Blue water with ripples, foam, shallow pools. Coastal or river maps.</div>
+    </div>
+    <div class="terrain-card fire">
+      <div class="element">&#x1F525;</div>
+      <img src="terrain_fire.png">
+      <div class="zh">火 Fire</div>
+      <div class="en">Volcanic / Lava</div>
+      <div class="desc">Cracked volcanic rock with glowing lava veins. Hell or volcano maps.</div>
+    </div>
+    <div class="terrain-card earth">
+      <div class="element">&#x26F0;</div>
+      <img src="terrain_earth.png">
+      <div class="zh">土 Earth</div>
+      <div class="en">Desert / Sandy</div>
+      <div class="desc">Sandy brown ground with pebbles and dry cracks. Desert or canyon maps.</div>
+    </div>
+  </div>
+  <p style="color:#666; font-size:0.85em; margin-top:8px;">Current terrain: Tiny Swords grass tilemap (木 Wood equivalent). Tiles above are Gemini-generated with magenta chroma key removal.</p>
+</div>
+
+<!-- ==================== COLOR PALETTE ==================== -->
+<h2>Color Palette</h2>
+<div class="section">
+  <div class="swatch-row">
+    <div class="swatch" style="background:#000020;">Outline<br>#000020</div>
+    <div class="swatch" style="background:#404040;">Shadow<br>#404040</div>
+    <div class="swatch" style="background:#E0E0A0; color:#333;">Skin Light<br>#E0E0A0</div>
+    <div class="swatch" style="background:#C0A060;">Skin Mid<br>#C0A060</div>
+    <div class="swatch" style="background:#806060;">Skin Dark<br>#806060</div>
+  </div>
+  <div class="swatch-row">
+    <div class="swatch" style="background:#406080;">Cool Blue<br>#406080</div>
+    <div class="swatch" style="background:#806040;">Warm Brown<br>#806040</div>
+    <div class="swatch" style="background:#C0C040; color:#333;">Gold<br>#C0C040</div>
+    <div class="swatch" style="background:#A08040;">Earth<br>#A08040</div>
+    <div class="swatch" style="background:#A0C0C0; color:#333;">Ice Blue<br>#A0C0C0</div>
+  </div>
+</div>
+
+<!-- ==================== PIPELINE ==================== -->
+<h2>Sprite Generation Pipeline</h2>
+<div class="section">
+  <div class="pipeline">
+    <div class="step"><div class="num">1</div><div class="desc">Upload<br>Style Ref</div></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><div class="num">2A</div><div class="desc">Design Sheet<br>(4 views)</div></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><div class="num">2B</div><div class="desc">Anim Sheet<br>(6x7 grid)</div></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><div class="num">3</div><div class="desc">Resize<br>(sips)</div></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><div class="num">4</div><div class="desc">Remove<br>Magenta</div></div>
+    <div class="arrow">&rarr;</div>
+    <div class="step"><div class="num">5</div><div class="desc">Import<br>Godot</div></div>
+  </div>
+
+  <h3>Animation Sheet Layout (6x7 grid)</h3>
+  <table>
+    <tr><th>Row</th><th>Animation</th><th>Frames</th><th>Usage</th></tr>
+    <tr><td>1</td><td>Walk East</td><td>0&ndash;5</td><td>Moving right</td></tr>
+    <tr><td>2</td><td>Walk North</td><td>6&ndash;11</td><td>Moving up</td></tr>
+    <tr><td>3</td><td>Walk South</td><td>12&ndash;17</td><td>Moving down</td></tr>
+    <tr><td>4</td><td>Walk West</td><td>18&ndash;23</td><td>Moving left</td></tr>
+    <tr><td>5</td><td>Frozen</td><td>24&ndash;29</td><td>Frost tower hit</td></tr>
+    <tr><td>6</td><td>Electric Shock</td><td>30&ndash;35</td><td>Tesla tower hit</td></tr>
+    <tr><td>7</td><td>Death</td><td>36&ndash;41</td><td>HP = 0</td></tr>
+  </table>
+</div>
+
+<!-- ==================== RULES ==================== -->
+<h2>Style Rules</h2>
+<div class="section">
+  <div class="rules">
+    <div>
+      <h3 class="do">DO</h3>
+      <ul>
+        <li>Thick dark outlines (near-black blue #000020)</li>
+        <li>Chibi proportions (big head, stubby limbs)</li>
+        <li>Muted earthy tones, occasional bright accents</li>
+        <li>Readable silhouettes at small sizes</li>
+        <li>Subtle animations (sway, bounce, ripple)</li>
+        <li>Soft 2-3 tone shading</li>
+        <li>3/4 isometric view angle</li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="dont">DON'T</h3>
+      <ul>
+        <li>Pure black #000000 outlines (use blue-black)</li>
+        <li>Neon / saturated colors (except UI)</li>
+        <li>Too much detail at 64px (readability first)</li>
+        <li>Mix realistic + chibi art styles</li>
+        <li>Thin 1px outlines (too fragile)</li>
+        <li>Harsh gradients or photo textures</li>
+        <li>Characters larger than 70% of frame</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
