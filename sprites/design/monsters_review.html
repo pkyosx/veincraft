@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VeinCraft — 10 Monster Design Review (Tiny Swords Style)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 40px; max-width: 1100px; margin: 0 auto; }
+  h1 { color: #f0c040; font-size: 2em; margin-bottom: 4px; }
+  h2 { color: #80c0ff; font-size: 1.3em; margin-top: 30px; margin-bottom: 12px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  .subtitle { color: #888; font-size: 0.95em; margin-bottom: 24px; }
+  .monster { background: #222240; border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .monster-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .monster-header .wave { background: #333366; color: #f0c040; padding: 4px 12px; border-radius: 16px; font-size: 0.8em; font-weight: bold; }
+  .monster-header .name { font-size: 1.2em; font-weight: bold; }
+  .monster-header .type { font-size: 0.8em; padding: 3px 10px; border-radius: 12px; }
+  .type-normal { background: #3a5a3a; color: #80ff80; }
+  .type-fast { background: #5a5a2a; color: #ffff80; }
+  .type-tank { background: #5a2a2a; color: #ff8080; }
+  .strip { text-align: center; margin: 8px 0; }
+  .strip img { image-rendering: pixelated; border: 2px solid #444; border-radius: 4px; height: 100px; }
+  .pick-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .pick-row .label { color: #aaa; font-size: 0.85em; min-width: 100px; }
+  .pick-btn { background: #333366; border: 2px solid #555; color: #e0e0e0; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: all 0.15s; }
+  .pick-btn:hover { border-color: #f0c040; color: #f0c040; }
+  .pick-btn.selected { background: #4a3a1a; border-color: #f0c040; color: #f0c040; font-weight: bold; }
+  .desc { color: #777; font-size: 0.8em; margin-top: 4px; }
+
+  .instructions { background: #333355; border-radius: 8px; padding: 16px; margin: 24px 0; color: #ccc; font-size: 0.9em; line-height: 1.6; }
+  .instructions strong { color: #f0c040; }
+
+  #summary { background: #2a3a2a; border: 2px solid #4a6a4a; border-radius: 8px; padding: 16px; margin-top: 24px; display: none; }
+  #summary h3 { color: #80ff80; margin-bottom: 8px; }
+  #summary-text { font-family: monospace; font-size: 0.9em; color: #ccc; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+
+<h1>10 Monster Design Review</h1>
+<div class="subtitle">Tiny Swords style (Pixel Frog) — 6 variations each, pick your favorite</div>
+
+<div class="instructions">
+  <strong>How to choose:</strong> For each monster, click the letter (A-F) of the design you like best.
+  Your selections will appear at the bottom as a summary you can copy. Or just tell me verbally!
+</div>
+
+<div id="monsters"></div>
+
+<div id="summary">
+  <h3>Your Selections:</h3>
+  <pre id="summary-text"></pre>
+</div>
+
+<script>
+const monsters = [
+  { name: "Slime", wave: "1-2", type: "normal", file: "slime_options.png",
+    desc: "A:Round basic B:Flat angry C:Tall sleepy D:Horned menacing E:Leaf derpy F:Dripping" },
+  { name: "Skeleton", wave: "3", type: "fast", file: "skeleton_options.png",
+    desc: "A:Warrior+sword B:Hooded cape C:Archer+bow D:Big skull E:Armored+shield F:Ghost hybrid" },
+  { name: "Goblin", wave: "4", type: "normal", file: "goblin_options.png",
+    desc: "A:Basic dagger B:Bomber+bomb C:Shaman+staff D:Thief+mask E:Club+big ears F:Rat rider" },
+  { name: "Wolf", wave: "5", type: "fast", file: "wolf_options.png",
+    desc: "A:Classic grey B:Arctic white C:Dark scarred D:Pup playful E:Armored war F:Shadow purple" },
+  { name: "Mushroom", wave: "6", type: "tank", file: "mushroom_options.png",
+    desc: "A:Red toadstool B:Blue glow C:Brown warrior D:Cluster 3x E:Poison purple F:Puffball round" },
+  { name: "Bat Swarm", wave: "7", type: "fast", file: "bat_options.png",
+    desc: "A:Large single B:Cluster 3x C:Big ears D:Vampire red-eye E:Fruit brown F:Ghost white" },
+  { name: "Orc", wave: "8", type: "tank", file: "orc_options.png",
+    desc: "A:Classic club B:Berserker axes C:Chief feathered D:Young slingshot E:Armored mace F:Shaman staff" },
+  { name: "Wraith", wave: "9", type: "fast", file: "wraith_options.png",
+    desc: "A:White ghost B:Dark hooded C:Blue chains D:Fire orange E:Banshee scream F:Shadow purple" },
+  { name: "Dragon Whelp", wave: "10", type: "tank", file: "dragon_options.png",
+    desc: "A:Red fire B:Blue ice C:Green nature D:Black dark E:Gold crown F:Two-headed" },
+  { name: "Golem", wave: "Bonus", type: "tank", file: "golem_options.png",
+    desc: "A:Stone classic B:Moss green C:Lava orange D:Ice blue E:Iron metal F:Ancient runes" },
+];
+
+const selections = {};
+const container = document.getElementById('monsters');
+
+monsters.forEach((m, i) => {
+  const typeClass = m.type === 'normal' ? 'type-normal' : m.type === 'fast' ? 'type-fast' : 'type-tank';
+  const typeLabel = m.type.charAt(0).toUpperCase() + m.type.slice(1);
+
+  const div = document.createElement('div');
+  div.className = 'monster';
+  div.innerHTML = `
+    <div class="monster-header">
+      <span class="wave">Wave ${m.wave}</span>
+      <span class="name">${m.name}</span>
+      <span class="type ${typeClass}">${typeLabel}</span>
+    </div>
+    <div class="strip"><img src="${m.file}" alt="${m.name} variations"></div>
+    <div class="desc">${m.desc}</div>
+    <div class="pick-row">
+      <span class="label">Your pick:</span>
+      ${['A','B','C','D','E','F'].map(l =>
+        `<button class="pick-btn" data-monster="${m.name}" data-choice="${l}" onclick="pick('${m.name}','${l}',this)">${l}</button>`
+      ).join('')}
+    </div>
+  `;
+  container.appendChild(div);
+});
+
+function pick(monster, choice, btn) {
+  selections[monster] = choice;
+  // Deselect siblings
+  btn.parentElement.querySelectorAll('.pick-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  updateSummary();
+}
+
+function updateSummary() {
+  const summaryDiv = document.getElementById('summary');
+  const summaryText = document.getElementById('summary-text');
+  const lines = monsters.map(m => {
+    const sel = selections[m.name] || '?';
+    return `${m.name}: ${sel}`;
+  });
+  summaryText.textContent = lines.join('\n');
+  summaryDiv.style.display = Object.keys(selections).length > 0 ? 'block' : 'none';
+}
+</script>
+
+</body>
+</html>
