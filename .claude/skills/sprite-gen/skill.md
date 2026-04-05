@@ -1,138 +1,255 @@
 # Sprite & Character Generation
 
-Two methods for generating game sprites and character art for this project.
+## Method 1: Gemini AI Sprite Pipeline (Primary)
 
-## Method 1: LPC Spritesheet Generator (Pixel Art Characters)
-
-Use the Universal LPC Spritesheet Character Generator for pixel-art style characters with walk/attack/idle animations.
-
-**URL**: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
-
-### How to use
-
-1. Open the URL in the user's browser using Playwright:
-   ```
-   mcp__plugin_playwright_playwright__browser_navigate → the URL above
-   ```
-2. Use the web UI to customize the character:
-   - Body type, skin color
-   - Hair, clothing, armor
-   - Weapons, accessories
-3. Download the spritesheet PNG (typically 832x1344, 64x64 per frame)
-4. Copy to `res://sprites/` in the project
-5. Use AnimatedSprite2D or Sprite2D with frame-based animation
-
-### Spritesheet layout
-- Each row = one animation direction (up, left, down, right)
-- Columns = animation frames
-- Standard frame size: 64x64 pixels
-- Common animations: idle, walk, slash, thrust, shoot, hurt, cast
-
-### Best for
-- Player characters
-- Humanoid enemies (soldiers, knights, mages)
-- NPCs
-
-### License
-LPC assets are dual-licensed under CC-BY-SA 3.0 and GPLv3. Credit required.
-
----
-
-## Method 2: Gemini AI Image Generation (Custom Monsters)
-
-Use Google Gemini to generate unique monster/creature art via AI.
+Automated pipeline for generating consistent game sprites via Google Gemini.
 
 **URL**: https://gemini.google.com/
 
-### How to use
+### Pipeline Steps
 
-1. Open Gemini in browser using Playwright:
-   ```
-   mcp__plugin_playwright_playwright__browser_navigate → https://gemini.google.com/
-   ```
-2. Prompt Gemini with a specific style description. Example prompts:
+#### Step 1: Open Gemini & Upload Style Reference
 
-   **Halloween-style monsters:**
-   ```
-   Generate a pixel art sprite sheet of a Halloween-style [monster type],
-   top-down view, 64x64 pixels, dark background, 4 frames of walk
-   animation facing right. Style: retro 16-bit game art.
-   ```
+```
+mcp__plugin_playwright_playwright__browser_navigate → https://gemini.google.com/
+# Take snapshot, find and click the "Create image" button
+# Then upload the style reference image BEFORE typing the prompt
+```
 
-   **Tower Defense enemies:**
-   ```
-   Create a pixel art character sprite for a tower defense game.
-   The character is a [description]. Show 4 animation frames in a
-   horizontal strip, each frame 64x64 pixels, transparent background.
-   ```
+**Upload the style reference:**
+1. Click the "Open upload file menu" button (the + icon)
+2. Upload `res://sprites/style_reference.png` (contains 3 Tiny Swords characters)
+3. This ensures Gemini matches the existing art style
 
-3. Download the generated image
-4. Copy to `res://sprites/` in the project
-5. May need manual cleanup in an image editor (crop, resize, fix transparency)
+The style reference file (`sprites/style_reference.png`) contains single frames
+of our 3 existing enemy types (Purple Pawn, Yellow Archer, Black Warrior) from
+the Tiny Swords art pack. Gemini uses this to match proportions, color palette,
+outline style, shading, and overall aesthetic.
 
-### Prompt tips for better results
-- Always specify "pixel art" and "sprite sheet" in the prompt
-- Include exact pixel dimensions (64x64, 32x32)
-- Mention "transparent background" or "dark background"
-- Specify "top-down view" or "side view" depending on game perspective
-- Request specific frame count: "4 frames" or "8 frames"
-- Add style keywords: "retro", "16-bit", "8-bit", "Halloween", "fantasy"
+**To regenerate the reference** (if new characters are added):
+```gdscript
+# Run as Godot editor script
+var ref_img = Image.create(576, 256, false, Image.FORMAT_RGBA8)
+ref_img.fill(Color(0, 0, 0, 0))
+var sources = ["enemy_normal.png", "enemy_fast.png", "enemy_tank.png"]
+for i in range(sources.size()):
+    var src = Image.load_from_file("res://sprites/" + sources[i])
+    var frame = src.get_region(Rect2i(0, 0, 192, 192))
+    ref_img.blit_rect(frame, Rect2i(0, 0, 192, 192), Vector2i(i * 192, 32))
+ref_img.save_png("res://sprites/style_reference.png")
+```
 
-### Best for
-- Unique monsters and creatures
-- Boss characters
-- Environmental props
-- Any non-humanoid characters
+#### Step 2: Submit Standardized Prompt (with reference)
+
+Use this **grid-based** template — fill in `[CHARACTER]`, `[DESCRIPTION]`:
+
+```
+The attached image shows 3 characters from our game (Tiny Swords art style).
+Match this EXACT art style: cute chibi pixel art with thick dark outlines,
+soft shading, small body with oversized head, muted fantasy color palette,
+isometric view.
+
+Create a game sprite sheet for a NEW character: [CHARACTER] ([DESCRIPTION]).
+
+Layout the sprite sheet as a GRID like a classic game sprite sheet:
+- Row 1: IDLE animation (6 frames, slight breathing/bounce)
+- Row 2: RUN animation (6 frames, running to the right)
+- Row 3: ATTACK animation (6 frames, attack motion)
+
+Each frame should be exactly 64x64 pixels. Total image: 384x192 pixels
+(6 columns x 3 rows).
+Transparent background. Every frame must have the character centered in
+its 64x64 cell.
+The character should match the proportions and style of the reference
+image exactly.
+```
+
+**Variant — Multi-character sheet** (e.g., 4 tower types, single row):
+```
+The attached image shows characters from our game (Tiny Swords art style).
+Match this EXACT art style. Create [N] NEW items/characters in a single row,
+each 64x64 pixels (total: [N*64]x64).
+From left to right:
+1. [Name] — [description]
+2. [Name] — [description]
+...
+```
+
+**Why grid format works better:**
+- Gemini understands "sprite sheet grid" as a well-known concept
+- Rows naturally map to animation types (idle/run/attack)
+- 6x3 grid = 18 frames, enough for a full character
+- Easy to slice in Godot with `hframes` and `vframes`
+
+#### Step 3: Wait & Download
+
+Gemini takes ~15-30 seconds. Check with screenshot. Then:
+
+```
+# The download event auto-fires when running code that references blob images:
+mcp__godot-mcp-pro__execute_editor_script  # (or use Playwright run_code)
+# Image lands in .playwright-mcp/ as Gemini-Generated-Image-*.png
+```
+
+If auto-download doesn't work, click the "Download full size image" button from snapshot.
+
+#### Step 4: Resize (REQUIRED)
+
+Gemini ALWAYS outputs ~4128px wide regardless of prompt. Must resize:
+
+```bash
+# For sprite sheets: resize to target dimensions
+sips -z [HEIGHT] [WIDTH] path/to/image.png
+
+# Examples:
+sips -z 64 256   # 4-frame sheet (4 * 64 = 256)
+sips -z 64 384   # 6-frame sheet
+sips -z 64 512   # 8-frame sheet
+sips -z 64 64    # Single sprite
+```
+
+#### Step 5: Remove Checkerboard Background (REQUIRED)
+
+Gemini renders "transparency" as a grey/white checkerboard. Remove it via Godot editor script:
+
+```gdscript
+# Run as editor script in Godot
+var img = Image.load_from_file("res://sprites/[FILENAME].png")
+
+var removed = 0
+for x in range(img.get_width()):
+    for y in range(img.get_height()):
+        var c = img.get_pixel(x, y)
+        var r = int(c.r8)
+        var g = int(c.g8)
+        var b = int(c.b8)
+        var max_diff = max(abs(r - g), max(abs(g - b), abs(r - b)))
+        # Grey pixels: R approx G approx B, not too dark or bright
+        if max_diff < 25:
+            var avg = (r + g + b) / 3
+            if avg > 70 and avg < 240:
+                img.set_pixel(x, y, Color(0, 0, 0, 0))
+                removed += 1
+
+img.save_png("res://sprites/[OUTPUT_FILENAME].png")
+_mcp_print("Removed " + str(removed) + " background pixels")
+```
+
+**Thresholds to adjust if needed:**
+- `max_diff < 25` — how "grey" a pixel must be (lower = stricter)
+- `avg > 70` — don't remove very dark pixels (shadow detail)
+- `avg < 240` — don't remove very bright pixels (white highlights)
+
+If sprites lose detail, increase the lower bound (70 → 90) or decrease max_diff (25 → 15).
+
+#### Step 6: Import & Verify
+
+```gdscript
+# Trigger Godot filesystem scan
+EditorInterface.get_resource_filesystem().scan()
+```
+
+Then restart the game scene (textures loaded at `_ready` won't hot-reload).
+
+### Known Issues & Workarounds
+
+| Issue | Solution |
+|-------|----------|
+| Gemini ignores exact pixel size | Always resize with `sips` after download |
+| "Transparent background" = checkerboard | Run background removal script (Step 5) |
+| Browser session dies between uses | Run `browser_snapshot` first; if error, navigate fresh |
+| Download button doesn't save to disk | Use `browser_run_code` — the download event fires automatically |
+| Sprites have grey halos after cleanup | Tighten thresholds or do a second pass |
+| Style inconsistency between generations | Always include "matching Tiny Swords art pack aesthetic" in prompt |
+
+### Integration Code Template
+
+```gdscript
+# In the node that uses the sprite:
+static var my_texture: Texture2D = null
+
+func setup():
+    if my_texture == null:
+        my_texture = load("res://sprites/my_sprite.png")
+    if my_texture:
+        sprite = Sprite2D.new()
+        sprite.texture = my_texture
+        sprite.hframes = [FRAME_COUNT]  # frames in horizontal strip
+        sprite.frame = 0
+        sprite.scale = Vector2(0.4, 0.4)  # 192px source → ~77px display
+        add_child(sprite)
+
+# Animation in _process:
+anim_timer += delta
+if anim_timer >= 0.2:  # 5 FPS
+    anim_timer = 0.0
+    anim_frame = (anim_frame + 1) % sprite.hframes
+    sprite.frame = anim_frame
+```
 
 ---
 
-## Integration into Godot
+## Method 2: Tiny Swords Asset Pack (Pre-made)
 
-After downloading sprites, to use them in the game:
+Use downloaded assets from `~/Downloads/Tiny Swords (Free Pack)/` for consistent art.
 
-```gdscript
-# Load a sprite sheet
-var texture: Texture2D = load("res://sprites/monster.png")
+### Available Assets
 
-# For AnimatedSprite2D — set up in SpriteFrames resource
-# For simple Sprite2D — use hframes/vframes for frame-based animation
+| Category | Path | Details |
+|----------|------|---------|
+| Units | `Units/[Color] Units/[Type]/` | 5 types (Archer, Lancer, Monk, Pawn, Warrior) x 5 colors |
+| Trees | `Terrain/Resources/Wood/Trees/` | Tree1-4.png (8 frames, 192x256 each) |
+| Rocks | `Terrain/Decorations/Rocks/` | Rock1-4.png (64x64, static) |
+| Bushes | `Terrain/Decorations/Bushes/` | Bushe1-4.png (animated, 8 frames) |
+| Gold | `Terrain/Resources/Gold/Gold Stones/` | Gold Stone 1-6.png (64x64) |
+| Tilemap | `Terrain/Tileset/` | Tilemap_color1-5.png (576x384, 64px tiles) |
 
-# Example: Sprite2D with horizontal strip (4 frames)
-var sprite: Sprite2D = Sprite2D.new()
-sprite.texture = texture
-sprite.hframes = 4  # 4 columns
-sprite.frame = 0    # current frame
-# Animate by changing sprite.frame in _process
-```
+### Unit Sprite Format
+- **Animations**: Idle, Run, Attack1, Attack2, Guard
+- **Frame sizes**: 192x192 per frame
+- **Frame counts**: 6 or 8 frames per animation (check file width / 192)
+- **Colors**: Red, Blue, Purple, Black, Yellow
+- **Scale in game**: Vector2(0.35–0.5, 0.35–0.5) for 90px cells
 
-## Method 3: Pixabay (Free Sound Effects)
+### Current Assignments
+
+| Game Element | Asset | Source |
+|---|---|---|
+| Normal enemy | Purple Pawn Run (6 frames) | Tiny Swords |
+| Fast enemy | Yellow Archer Run (4 frames) | Tiny Swords |
+| Tank enemy | Black Warrior Run (6 frames) | Tiny Swords |
+| Trees | Tree1 (8 frames) | Tiny Swords |
+| Rocks | Rock1, Rock2 (static) | Tiny Swords |
+| Ground | Tilemap_color1 center tile | Tiny Swords |
+| Towers | Gemini AI generated sheet | Gemini |
+| Pumpkin (unused) | pumpkin_monster_64.png | Gemini |
+
+---
+
+## Method 3: LPC Spritesheet Generator (Humanoid Characters)
+
+**URL**: https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/
+
+Best for detailed humanoid characters with full directional walk/attack animations.
+- 832x1344 output, 64x64 per frame
+- Customize body, hair, armor, weapons via web UI
+- License: CC-BY-SA 3.0 / GPLv3
+
+---
+
+## Method 4: Pixabay (Sound Effects)
 
 **URL**: https://pixabay.com/
 
-### How to use
+### Sound Library
 
-1. Open Pixabay in browser, search for the sound type needed
-2. Filter by "Sound Effects"
-3. Download the MP3
-4. Copy to `res://audio/` in the project
-5. Load in AudioManager: `streams["name"] = load("res://audio/filename.mp3")`
-
-### Best for
-- Professional-quality sound effects (shoot, explosion, UI clicks)
-- Background music loops
-- Ambient sounds
-
-### License
-Pixabay Content License — free for commercial use, no attribution required.
-
-### Sound library in this project
 | File | Description | Source |
 |------|-------------|--------|
 | `sfx_spin.mp3` | Spinner wheel sound | Pixabay/freesound |
 | `sfx_jackpot.mp3` | Twinkle sparkle for spin result | Pixabay |
 | `sfx_shoot.mp3` | Retro laser shot | Pixabay |
-| `sfx_shoot_alt.mp3` | Alternative shoot sound (stored for later) | Pixabay/freesound |
-| `bgm.mp3` | Holding The Line — main BGM | User created |
+| `sfx_shoot_alt.mp3` | Alternative shoot (stored) | Pixabay/freesound |
+| `bgm.mp3` | Holding The Line — main BGM | User provided |
 
 ---
 
