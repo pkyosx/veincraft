@@ -52,12 +52,16 @@ isometric view.
 Create a game sprite sheet for a NEW character: [CHARACTER] ([DESCRIPTION]).
 
 Layout the sprite sheet as a GRID like a classic game sprite sheet:
-- Row 1: IDLE animation (6 frames, slight breathing/bounce)
-- Row 2: RUN animation (6 frames, running to the right)
-- Row 3: ATTACK animation (6 frames, attack motion)
+- Row 1: WALK EAST animation (6 frames, walking to the right)
+- Row 2: WALK NORTH animation (6 frames, walking upward / away from camera)
+- Row 3: WALK SOUTH animation (6 frames, walking downward / toward camera)
+- Row 4: WALK WEST animation (6 frames, walking to the left)
+- Row 5: FROZEN animation (6 frames, character encased in ice, shivering)
+- Row 6: ELECTRIC SHOCK animation (6 frames, character being electrocuted with sparks)
+- Row 7: DEATH animation (6 frames, character collapsing and fading)
 
-Each frame should be exactly 64x64 pixels. Total image: 384x192 pixels
-(6 columns x 3 rows).
+Each frame should be exactly 64x64 pixels. Total image: 384x448 pixels
+(6 columns x 7 rows).
 Transparent background. Every frame must have the character centered in
 its 64x64 cell.
 The character should match the proportions and style of the reference
@@ -75,11 +79,24 @@ From left to right:
 ...
 ```
 
-**Why grid format works better:**
-- Gemini understands "sprite sheet grid" as a well-known concept
-- Rows naturally map to animation types (idle/run/attack)
-- 6x3 grid = 18 frames, enough for a full character
-- Easy to slice in Godot with `hframes` and `vframes`
+**Row index reference for code integration:**
+
+| Row | Index | Animation | Frames | Usage |
+|-----|-------|-----------|--------|-------|
+| 1 | 0 | Walk East | 0–5 | Moving right on path |
+| 2 | 1 | Walk North | 6–11 | Moving up on path |
+| 3 | 2 | Walk South | 12–17 | Moving down on path |
+| 4 | 3 | Walk West | 18–23 | Moving left on path |
+| 5 | 4 | Frozen | 24–29 | Hit by Frost tower |
+| 6 | 5 | Electric Shock | 30–35 | Hit by Tesla tower |
+| 7 | 6 | Death | 36–41 | HP reaches 0 |
+
+**Why this layout works for our TD game:**
+- 4 directional walks = natural movement without flip_h hack
+- Status effect rows = visual feedback for Frost/Tesla tower hits
+- Death animation = replaces programmatic scale tween
+- 6x7 grid = 42 frames, comprehensive character coverage
+- Easy to slice: `hframes=6, vframes=7`, row = `direction * 6`
 
 #### Step 3: Wait & Download
 
@@ -165,8 +182,14 @@ Then restart the game scene (textures loaded at `_ready` won't hot-reload).
 ### Integration Code Template
 
 ```gdscript
+# Constants for grid sprite sheets (6x7 layout)
+enum AnimRow { WALK_E = 0, WALK_N = 1, WALK_S = 2, WALK_W = 3,
+               FROZEN = 4, SHOCKED = 5, DEATH = 6 }
+const FRAMES_PER_ROW: int = 6
+
 # In the node that uses the sprite:
 static var my_texture: Texture2D = null
+var current_row: int = AnimRow.WALK_E
 
 func setup():
     if my_texture == null:
@@ -174,17 +197,25 @@ func setup():
     if my_texture:
         sprite = Sprite2D.new()
         sprite.texture = my_texture
-        sprite.hframes = [FRAME_COUNT]  # frames in horizontal strip
+        sprite.hframes = 6   # columns
+        sprite.vframes = 7   # rows
         sprite.frame = 0
-        sprite.scale = Vector2(0.4, 0.4)  # 192px source → ~77px display
+        sprite.scale = Vector2(1.0, 1.0)  # 64px frames, adjust as needed
         add_child(sprite)
+
+# Pick row based on movement direction:
+func _get_walk_row(dir: Vector2) -> int:
+    if abs(dir.x) > abs(dir.y):
+        return AnimRow.WALK_E if dir.x > 0 else AnimRow.WALK_W
+    else:
+        return AnimRow.WALK_S if dir.y > 0 else AnimRow.WALK_N
 
 # Animation in _process:
 anim_timer += delta
-if anim_timer >= 0.2:  # 5 FPS
+if anim_timer >= 0.15:
     anim_timer = 0.0
-    anim_frame = (anim_frame + 1) % sprite.hframes
-    sprite.frame = anim_frame
+    anim_frame = (anim_frame + 1) % FRAMES_PER_ROW
+    sprite.frame = current_row * FRAMES_PER_ROW + anim_frame
 ```
 
 ---
