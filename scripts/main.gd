@@ -190,6 +190,40 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 					_recalc_tower_upgrades(n)
 			return true
 		return false
+	elif config["type"] == "mega_bomb":
+		if not is_valid_cell(pos):
+			return false
+		# Destroy everything in 3x3 area
+		var destroyed: int = 0
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				var target: Vector2i = pos + Vector2i(dx, dy)
+				if not is_valid_cell(target):
+					continue
+				var ct: int = grid[target.y][target.x]
+				if ct == GameData.Cell.ROCK or ct == GameData.Cell.TREE:
+					grid[target.y][target.x] = GameData.Cell.EMPTY
+					if target in hidden_treasures:
+						hidden_treasures.erase(target)
+						gold += 10
+					destroyed += 1
+				elif ct == GameData.Cell.TOWER:
+					towers.erase(target)
+					grid[target.y][target.x] = GameData.Cell.EMPTY
+					destroyed += 1
+				elif ct == GameData.Cell.UPGRADE:
+					upgrades.erase(target)
+					grid[target.y][target.x] = GameData.Cell.EMPTY
+					destroyed += 1
+		if destroyed > 0:
+			get_node("/root/Audio").play_sfx("kill", 4.0)
+			screen_shake(10.0, 0.3)
+			_show_treasure_notification("BOOM! Cleared " + str(destroyed) + " tiles!", pos)
+			# Recalc all towers
+			for t_pos in towers:
+				_recalc_tower_upgrades(t_pos)
+			return true
+		return false
 	return false
 
 func _recalc_tower_upgrades(tower_pos: Vector2i) -> void:
@@ -329,6 +363,35 @@ func _process_towers(delta: float) -> void:
 						last_pos = next_enemy.global_position
 					else:
 						break
+			elif "pierce" in tc:
+				# Racer: car pierces through multiple enemies along the path
+				var pierce_count: int = tc["pierce"]
+				var dir_to_target: Vector2 = (best_enemy.global_position - tower_world).normalized()
+				var hit_enemies: Array = []
+				# Find all enemies roughly in the line of fire
+				for e in enemies:
+					if not is_instance_valid(e) or e.is_dead:
+						continue
+					var to_e: Vector2 = e.global_position - tower_world
+					var proj: float = to_e.dot(dir_to_target)
+					if proj > 0:
+						var perp_dist: float = abs(to_e.cross(dir_to_target))
+						if perp_dist < GameData.CELL_SIZE * 0.6:
+							hit_enemies.append({"enemy": e, "dist": proj})
+				hit_enemies.sort_custom(func(a, b): return a["dist"] < b["dist"])
+				var hits: int = 0
+				var last_pos: Vector2 = tower_world
+				for entry in hit_enemies:
+					if hits >= pierce_count:
+						break
+					entry["enemy"].take_damage(tower["damage"])
+					_spawn_projectile(last_pos, entry["enemy"].global_position)
+					last_pos = entry["enemy"].global_position
+					hits += 1
+					screen_shake(6.0, 0.1)
+				if hits == 0:
+					best_enemy.take_damage(tower["damage"])
+					_spawn_projectile(tower_world, best_enemy.global_position)
 			else:
 				best_enemy.take_damage(tower["damage"])
 				_spawn_projectile(tower_world, best_enemy.global_position)
@@ -548,12 +611,13 @@ func _draw_path_arrows() -> void:
 		draw_line(tip, tip - dir * 10 - perp * 6, Color(0.4, 0.4, 0.45, 0.5), 2.0)
 
 func _draw_towers() -> void:
-	# Tower sprite order in sheet: TURRET=0, TREBUCHET=1, FROST=2, TESLA=3
+	# Tower sprite order in sheet: TURRET=0, TREBUCHET=1, FROST=2, TESLA=3, RACER=4
 	var tower_frame_map: Dictionary = {
 		GameData.TowerType.TURRET: 0,
 		GameData.TowerType.TREBUCHET: 1,
 		GameData.TowerType.FROST: 2,
 		GameData.TowerType.TESLA: 3,
+		GameData.TowerType.RACER: 4,
 	}
 	for pos in towers:
 		var tower: Dictionary = towers[pos]
@@ -596,9 +660,24 @@ func _draw_hover() -> void:
 			color = Color(0.3, 0.7, 1, 0.25)
 		elif config["type"] == "bomb" and is_valid_cell(hovered_cell) and grid[hovered_cell.y][hovered_cell.x] in [GameData.Cell.ROCK, GameData.Cell.TREE, GameData.Cell.TOWER, GameData.Cell.UPGRADE]:
 			color = Color(1, 0.8, 0, 0.3)
+		elif config["type"] == "mega_bomb" and is_valid_cell(hovered_cell):
+			color = Color(1, 0.5, 0, 0.3)
 		else:
 			color = Color(1, 0.2, 0.2, 0.2)
 	draw_rect(rect, color)
+	# Draw 3x3 area for mega bomb
+	if selected_bag_index >= 0 and selected_bag_index < bag.size():
+		var item: int = bag[selected_bag_index]
+		var cfg: Dictionary = GameData.ITEM_CONFIGS[item]
+		if cfg["type"] == "mega_bomb" and is_valid_cell(hovered_cell):
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					if dx == 0 and dy == 0:
+						continue
+					var neighbor: Vector2i = hovered_cell + Vector2i(dx, dy)
+					if is_valid_cell(neighbor):
+						var nr: Rect2 = Rect2(GameData.GRID_OFFSET + Vector2(neighbor.x * GameData.CELL_SIZE, neighbor.y * GameData.CELL_SIZE), Vector2(GameData.CELL_SIZE, GameData.CELL_SIZE))
+						draw_rect(nr, Color(1, 0.5, 0, 0.15))
 	draw_rect(rect, Color(1, 1, 1, 0.4), false, 2.0)
 
 func _draw_treasure_sparkles() -> void:

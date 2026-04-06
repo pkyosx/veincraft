@@ -10,10 +10,10 @@ const GRID_OFFSET: Vector2 = Vector2(40, 60)
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }
 
 # Tower types
-enum TowerType { TURRET, TREBUCHET, FROST, TESLA }
+enum TowerType { TURRET, TREBUCHET, FROST, TESLA, RACER }
 
 # Tile item types (what goes in the bag)
-enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB }
+enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB, RACER, MEGA_BOMB, UPGRADE_MEGA_DMG }
 
 const TOWER_CONFIGS: Dictionary = {
 	TowerType.TURRET: {
@@ -58,6 +58,17 @@ const TOWER_CONFIGS: Dictionary = {
 		"item": ItemType.TESLA,
 		"chain": 3,  # hits up to 3 enemies
 	},
+	TowerType.RACER: {
+		"name": "Racer",
+		"damage": 20,
+		"range": 4.0,
+		"cooldown": 3.0,
+		"color": Color(0.9, 0.1, 0.1),
+		"icon": "R",
+		"cost": 50,
+		"item": ItemType.RACER,
+		"pierce": 5,  # car hits up to 5 enemies in a line
+	},
 }
 
 const ITEM_CONFIGS: Dictionary = {
@@ -69,6 +80,9 @@ const ITEM_CONFIGS: Dictionary = {
 	ItemType.UPGRADE_SPEED: {"name": "+SPD", "color": Color(0.2, 0.7, 1.0), "type": "upgrade", "stat": "cooldown", "value": -0.15, "cost": 8},
 	ItemType.UPGRADE_RANGE: {"name": "+RNG", "color": Color(0.3, 0.9, 0.3), "type": "upgrade", "stat": "range", "value": 0.8, "cost": 8},
 	ItemType.BOMB: {"name": "Bomb", "color": Color(1.0, 0.8, 0.0), "type": "bomb", "cost": 3},
+	ItemType.RACER: {"name": "Racer", "color": Color(0.9, 0.1, 0.1), "type": "tower", "tower": TowerType.RACER, "cost": 50},
+	ItemType.MEGA_BOMB: {"name": "MegaBomb", "color": Color(1.0, 0.4, 0.0), "type": "mega_bomb", "cost": 20},
+	ItemType.UPGRADE_MEGA_DMG: {"name": "++DMG", "color": Color(1.0, 0.3, 0.0), "type": "upgrade", "stat": "damage", "value": 8, "cost": 30},
 }
 
 # Shop slot machine weights
@@ -83,7 +97,18 @@ const SHOP_POOL: Array = [
 	{"item": ItemType.BOMB, "weight": 8},
 ]
 
+# Premium shop pool ($50 spin)
+const PREMIUM_POOL: Array = [
+	{"item": ItemType.RACER, "weight": 25},
+	{"item": ItemType.TESLA, "weight": 20},
+	{"item": ItemType.TREBUCHET, "weight": 15},
+	{"item": ItemType.MEGA_BOMB, "weight": 15},
+	{"item": ItemType.UPGRADE_MEGA_DMG, "weight": 15},
+	{"item": ItemType.UPGRADE_RANGE, "weight": 10},
+]
+
 const SPIN_COST: int = 10
+const PREMIUM_SPIN_COST: int = 50
 const MAX_BAG: int = 8
 const MAX_HP: int = 3
 const STARTING_GOLD: int = 30
@@ -185,13 +210,14 @@ static func get_wave_composition(wave: int) -> Array:
 		comp.append(wave_pool[i % wave_pool.size()])
 	return comp
 
-static func roll_shop_item() -> int:
+static func roll_shop_item(premium: bool = false) -> int:
+	var pool: Array = PREMIUM_POOL if premium else SHOP_POOL
 	var total_weight: int = 0
-	for entry in SHOP_POOL:
+	for entry in pool:
 		total_weight += entry["weight"]
 	var roll: int = randi() % total_weight
 	var cumulative: int = 0
-	for entry in SHOP_POOL:
+	for entry in pool:
 		cumulative += entry["weight"]
 		if roll < cumulative:
 			return entry["item"]

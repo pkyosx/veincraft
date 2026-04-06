@@ -6,6 +6,7 @@ var wave_label: Label
 var phase_label: Label
 var bag_container: HBoxContainer
 var btn_spin: Button
+var btn_premium_spin: Button
 var btn_play: Button
 var btn_restart: Button
 var end_panel: PanelContainer
@@ -54,6 +55,9 @@ func _load_item_icons() -> void:
 	item_icons[GameData.ItemType.UPGRADE_SPEED] = load("res://sprites/icon_spd.png")
 	item_icons[GameData.ItemType.UPGRADE_RANGE] = load("res://sprites/icon_rng.png")
 	item_icons[GameData.ItemType.BOMB] = load("res://sprites/icon_bomb.png")
+	item_icons[GameData.ItemType.RACER] = load("res://sprites/icon_racer.png")
+	item_icons[GameData.ItemType.MEGA_BOMB] = load("res://sprites/icon_mega_bomb.png")
+	item_icons[GameData.ItemType.UPGRADE_MEGA_DMG] = load("res://sprites/icon_mega_dmg.png")
 
 func _build_ui() -> void:
 	# Right panel background
@@ -139,16 +143,26 @@ func _build_ui() -> void:
 	btn_spin.pressed.connect(_on_spin_pressed)
 	add_child(btn_spin)
 
+	# Premium spin button
+	btn_premium_spin = Button.new()
+	btn_premium_spin.text = "Premium Spin! ($" + str(GameData.PREMIUM_SPIN_COST) + ")"
+	btn_premium_spin.custom_minimum_size = Vector2(340, 50)
+	btn_premium_spin.position = Vector2(1180, 550)
+	btn_premium_spin.add_theme_font_size_override("font_size", 20)
+	btn_premium_spin.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	btn_premium_spin.pressed.connect(_on_premium_spin_pressed)
+	add_child(btn_premium_spin)
+
 	# Tower shop — direct buy
 	var shop_title: Label = Label.new()
 	shop_title.text = "Buy Tower"
 	shop_title.add_theme_font_size_override("font_size", 18)
-	shop_title.position = Vector2(1180, 560)
+	shop_title.position = Vector2(1180, 615)
 	add_child(shop_title)
 
 	var tower_grid: GridContainer = GridContainer.new()
 	tower_grid.columns = 2
-	tower_grid.position = Vector2(1180, 590)
+	tower_grid.position = Vector2(1180, 645)
 	tower_grid.name = "TowerGrid"
 	add_child(tower_grid)
 
@@ -165,7 +179,7 @@ func _build_ui() -> void:
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(1180, 700)
+	btn_play.position = Vector2(1180, 755)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -174,7 +188,7 @@ func _build_ui() -> void:
 	btn_speed = Button.new()
 	btn_speed.text = "Speed: 1x"
 	btn_speed.custom_minimum_size = Vector2(340, 45)
-	btn_speed.position = Vector2(1180, 760)
+	btn_speed.position = Vector2(1180, 815)
 	btn_speed.add_theme_font_size_override("font_size", 20)
 	btn_speed.pressed.connect(_on_speed_pressed)
 	add_child(btn_speed)
@@ -203,6 +217,26 @@ func _build_ui() -> void:
 		game.restart()
 	)
 	vbox.add_child(btn_restart)
+
+var is_premium_spin: bool = false
+
+func _on_premium_spin_pressed() -> void:
+	if spin_active:
+		return
+	if game.gold < GameData.PREMIUM_SPIN_COST or game.bag.size() >= GameData.MAX_BAG:
+		return
+	game.gold -= GameData.PREMIUM_SPIN_COST
+	spin_result = GameData.roll_shop_item(true)
+	is_premium_spin = true
+	spin_active = true
+	spin_timer = 0.0
+	spin_tick = 0.0
+	spin_interval = 0.05
+	spin_current_display = 0
+	btn_spin.disabled = true
+	btn_premium_spin.disabled = true
+	get_node("/root/Audio").play_spin()
+	game._update_hud()
 
 func _on_speed_pressed() -> void:
 	speed_index = (speed_index + 1) % speed_options.size()
@@ -339,11 +373,13 @@ func refresh(p_hp: int, p_gold: int, p_wave: int, p_max_waves: int, p_bag: Array
 		idx += 1
 
 	# Button states
-	var can_spin: bool = p_gold >= GameData.SPIN_COST and p_bag.size() < GameData.MAX_BAG and p_phase == "build" and not spin_active
-	btn_spin.disabled = not can_spin
+	var can_spin: bool = p_bag.size() < GameData.MAX_BAG and p_phase == "build" and not spin_active
+	btn_spin.disabled = not (can_spin and p_gold >= GameData.SPIN_COST)
+	btn_premium_spin.disabled = not (can_spin and p_gold >= GameData.PREMIUM_SPIN_COST)
 	btn_play.disabled = p_phase != "build" or spin_active
 	btn_play.visible = not p_game_over
 	btn_spin.visible = not p_game_over
+	btn_premium_spin.visible = not p_game_over
 
 	if p_game_over:
 		end_panel.visible = true
