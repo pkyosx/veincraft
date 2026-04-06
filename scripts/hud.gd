@@ -26,6 +26,9 @@ var btn_speed: Button
 var speed_options: Array = [1, 2, 4, 8]
 var speed_index: int = 0
 
+# Item icon textures
+var item_icons: Dictionary = {}
+
 var game: Node2D
 
 func _ready() -> void:
@@ -34,7 +37,23 @@ func _ready() -> void:
 	# Build item list for spin display
 	for key in GameData.ITEM_CONFIGS:
 		spin_items.append(key)
+	_load_item_icons()
 	_build_ui()
+
+func _load_item_icons() -> void:
+	# Tower icons from tower_sheet.png (4 frames, 64x64 each)
+	var sheet: Texture2D = load("res://sprites/tower_sheet.png")
+	var tower_items: Array = [GameData.ItemType.TURRET, GameData.ItemType.TREBUCHET, GameData.ItemType.FROST, GameData.ItemType.TESLA]
+	for i in range(tower_items.size()):
+		var atlas: AtlasTexture = AtlasTexture.new()
+		atlas.atlas = sheet
+		atlas.region = Rect2(i * 64, 0, 64, 64)
+		item_icons[tower_items[i]] = atlas
+	# Upgrade and bomb icons
+	item_icons[GameData.ItemType.UPGRADE_DMG] = load("res://sprites/icon_dmg.png")
+	item_icons[GameData.ItemType.UPGRADE_SPEED] = load("res://sprites/icon_spd.png")
+	item_icons[GameData.ItemType.UPGRADE_RANGE] = load("res://sprites/icon_rng.png")
+	item_icons[GameData.ItemType.BOMB] = load("res://sprites/icon_bomb.png")
 
 func _build_ui() -> void:
 	# Right panel background
@@ -91,6 +110,13 @@ func _build_ui() -> void:
 		btn.custom_minimum_size = Vector2(80, 80)
 		btn.text = ""
 		btn.pressed.connect(func() -> void: game.select_bag_item(i))
+		# Icon inside button
+		var icon: TextureRect = TextureRect.new()
+		icon.name = "Icon"
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.custom_minimum_size = Vector2(64, 64)
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(icon)
 		bag_container.add_child(btn)
 
 	# Spin display (shows cycling items during animation)
@@ -280,18 +306,26 @@ func refresh(p_hp: int, p_gold: int, p_wave: int, p_max_waves: int, p_bag: Array
 
 	for i in range(GameData.MAX_BAG):
 		var btn: Button = bag_container.get_child(i)
+		var icon: TextureRect = btn.get_node("Icon")
 		if i < p_bag.size():
-			var config: Dictionary = GameData.ITEM_CONFIGS[p_bag[i]]
-			btn.text = config["name"]
+			var item_type: int = p_bag[i]
+			var config: Dictionary = GameData.ITEM_CONFIGS[item_type]
+			btn.text = ""
+			btn.tooltip_text = config["name"]
 			btn.disabled = false
+			icon.texture = item_icons.get(item_type, null)
+			icon.visible = true
 			if i == p_selected:
-				btn.add_theme_color_override("font_color", Color(1, 1, 0))
+				btn.modulate = Color(1, 1, 0.5)
 			else:
-				btn.remove_theme_color_override("font_color")
+				btn.modulate = Color.WHITE
 		else:
 			btn.text = ""
+			btn.tooltip_text = ""
 			btn.disabled = true
-			btn.remove_theme_color_override("font_color")
+			btn.modulate = Color.WHITE
+			icon.texture = null
+			icon.visible = false
 
 	# Tower buy buttons
 	var tower_grid: GridContainer = get_node("TowerGrid")

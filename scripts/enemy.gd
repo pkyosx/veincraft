@@ -42,7 +42,7 @@ const SHOCK_DURATION: float = 0.3
 # Sprite sheet animation
 var total_frames: int = 1
 var frame_timer: float = 0.0
-const FRAME_SPEED: float = 0.1  # seconds per frame
+const FRAME_SPEED: float = 0.18  # seconds per frame
 
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
