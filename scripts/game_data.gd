@@ -1,10 +1,10 @@
 extends RefCounted
 class_name GameData
 
-const GRID_W: int = 12
-const GRID_H: int = 8
-const CELL_SIZE: int = 90
-const GRID_OFFSET: Vector2 = Vector2(40, 60)
+const GRID_W: int = 18
+const GRID_H: int = 12
+const CELL_SIZE: int = 60
+const GRID_OFFSET: Vector2 = Vector2(20, 30)
 
 # Cell types
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }
@@ -128,15 +128,33 @@ const MAX_HP: int = 3
 const STARTING_GOLD: int = 30
 const KILL_GOLD: int = 3
 
-# S-shaped path through the grid (grid coords)
+# Winding path through the 18x12 grid
 const ENEMY_PATH: Array[Vector2i] = [
-	Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1), Vector2i(5, 1),
-	Vector2i(5, 2), Vector2i(5, 3),
-	Vector2i(4, 3), Vector2i(3, 3), Vector2i(2, 3), Vector2i(1, 3),
+	# Enter from top-left, go right
+	Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1), Vector2i(3, 1), Vector2i(4, 1),
+	Vector2i(5, 1), Vector2i(6, 1), Vector2i(7, 1), Vector2i(8, 1),
+	# Turn down
+	Vector2i(8, 2), Vector2i(8, 3),
+	# Go left
+	Vector2i(7, 3), Vector2i(6, 3), Vector2i(5, 3), Vector2i(4, 3),
+	Vector2i(3, 3), Vector2i(2, 3), Vector2i(1, 3),
+	# Turn down
 	Vector2i(1, 4), Vector2i(1, 5),
-	Vector2i(2, 5), Vector2i(3, 5), Vector2i(4, 5), Vector2i(5, 5), Vector2i(6, 5),
-	Vector2i(6, 6),
-	Vector2i(7, 6), Vector2i(8, 6), Vector2i(9, 6), Vector2i(10, 6), Vector2i(11, 6),
+	# Go right across
+	Vector2i(2, 5), Vector2i(3, 5), Vector2i(4, 5), Vector2i(5, 5),
+	Vector2i(6, 5), Vector2i(7, 5), Vector2i(8, 5), Vector2i(9, 5),
+	Vector2i(10, 5), Vector2i(11, 5), Vector2i(12, 5),
+	# Turn down
+	Vector2i(12, 6), Vector2i(12, 7),
+	# Go left
+	Vector2i(11, 7), Vector2i(10, 7), Vector2i(9, 7), Vector2i(8, 7),
+	Vector2i(7, 7), Vector2i(6, 7), Vector2i(5, 7), Vector2i(4, 7),
+	# Turn down
+	Vector2i(4, 8), Vector2i(4, 9),
+	# Go right to exit
+	Vector2i(5, 9), Vector2i(6, 9), Vector2i(7, 9), Vector2i(8, 9),
+	Vector2i(9, 9), Vector2i(10, 9), Vector2i(11, 9), Vector2i(12, 9),
+	Vector2i(13, 9), Vector2i(14, 9), Vector2i(15, 9), Vector2i(16, 9), Vector2i(17, 9),
 ]
 
 # Enemy types

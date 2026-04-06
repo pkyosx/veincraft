@@ -27,7 +27,7 @@ func setup(p_from: Vector2, p_to: Vector2, p_car_type: String = "") -> void:
 			tex = f1_texture
 		car_sprite = Sprite2D.new()
 		car_sprite.texture = tex
-		car_sprite.scale = Vector2(2.5, 2.5)
+		car_sprite.scale = Vector2(1.8, 1.8)
 		add_child(car_sprite)
 		var dir: Vector2 = to_pos - from_pos
 		car_sprite.rotation = dir.angle()

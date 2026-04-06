@@ -73,7 +73,7 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 		sprite.texture = tex
 		sprite.hframes = total_frames
 		sprite.frame = 0
-		sprite.scale = Vector2(1.2, 1.2)
+		sprite.scale = Vector2(0.8, 0.8)
 		add_child(sprite)
 		radius = 20.0
 
@@ -141,14 +141,14 @@ func _process(delta: float) -> void:
 			# Frozen: blue tint + slight scale pulse
 			sprite.modulate = Color(0.5, 0.7, 1.0)
 			var pulse: float = 1.0 + sin(slow_timer * 8.0) * 0.05
-			sprite.scale = Vector2(1.2 * pulse, 1.2 * pulse)
+			sprite.scale = Vector2(0.8 * pulse, 0.8 * pulse)
 		else:
 			pass
 	else:
 		if sprite:
 			sprite.modulate = Color.WHITE
 			sprite.offset = Vector2.ZERO
-			sprite.scale = Vector2(1.2, 1.2)
+			sprite.scale = Vector2(0.8, 0.8)
 
 	# Sprite sheet frame animation
 	if sprite and total_frames > 1 and not is_dead:

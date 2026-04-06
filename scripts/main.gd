@@ -72,10 +72,13 @@ func _init_grid() -> void:
 
 	# Place some rocks and trees
 	var obstacles: Array[Vector2i] = [
-		Vector2i(3, 0), Vector2i(7, 0), Vector2i(10, 1),
-		Vector2i(0, 3), Vector2i(8, 2), Vector2i(9, 3),
-		Vector2i(3, 7), Vector2i(7, 4), Vector2i(10, 4),
-		Vector2i(0, 6), Vector2i(4, 7), Vector2i(8, 0),
+		Vector2i(3, 0), Vector2i(7, 0), Vector2i(11, 0), Vector2i(15, 0),
+		Vector2i(0, 2), Vector2i(10, 2), Vector2i(14, 2), Vector2i(5, 2),
+		Vector2i(0, 4), Vector2i(6, 4), Vector2i(10, 4), Vector2i(14, 4),
+		Vector2i(2, 6), Vector2i(8, 6), Vector2i(14, 6), Vector2i(16, 6),
+		Vector2i(0, 8), Vector2i(2, 8), Vector2i(10, 8), Vector2i(15, 8),
+		Vector2i(6, 10), Vector2i(10, 10), Vector2i(14, 10), Vector2i(16, 10),
+		Vector2i(0, 10), Vector2i(3, 11), Vector2i(8, 11), Vector2i(12, 11),
 	]
 	for obs in obstacles:
 		if grid[obs.y][obs.x] == GameData.Cell.EMPTY:
@@ -584,7 +587,7 @@ func _draw_grid() -> void:
 func _draw_rock(center: Vector2, seed_val: int = 0) -> void:
 	if rock_textures.size() > 0:
 		var tex: Texture2D = rock_textures[seed_val % rock_textures.size()]
-		var dst: Rect2 = Rect2(center - Vector2(30, 30), Vector2(60, 60))
+		var dst: Rect2 = Rect2(center - Vector2(20, 20), Vector2(40, 40))
 		draw_texture_rect(tex, dst, false)
 	else:
 		var pts: PackedVector2Array = PackedVector2Array([
@@ -599,7 +602,7 @@ func _draw_tree(center: Vector2) -> void:
 		var frame_w: float = 192.0
 		var frame_h: float = 256.0
 		var src: Rect2 = Rect2(tree_anim_frame * frame_w, 0, frame_w, frame_h)
-		var dst_h: float = 80.0
+		var dst_h: float = 55.0
 		var dst_w: float = dst_h * (frame_w / frame_h)
 		var dst: Rect2 = Rect2(center.x - dst_w / 2, center.y - dst_h * 0.6, dst_w, dst_h)
 		draw_texture_rect_region(tree_texture, dst, src)
@@ -637,7 +640,7 @@ func _draw_towers() -> void:
 		if tower_texture:
 			var frame: int = tower_frame_map.get(tower["type"], 0)
 			var src_rect: Rect2 = Rect2(frame * 64, 0, 64, 64)
-			var dst_size: float = 56.0
+			var dst_size: float = 42.0
 			var dst_rect: Rect2 = Rect2(center - Vector2(dst_size / 2, dst_size / 2), Vector2(dst_size, dst_size))
 			draw_texture_rect_region(tower_texture, dst_rect, src_rect)
 		else:
