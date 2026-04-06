@@ -10,10 +10,10 @@ const GRID_OFFSET: Vector2 = Vector2(40, 60)
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }
 
 # Tower types
-enum TowerType { TURRET, TREBUCHET, FROST, TESLA, RACER }
+enum TowerType { TURRET, TREBUCHET, FROST, TESLA, RACER, POLICE }
 
 # Tile item types (what goes in the bag)
-enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB, RACER, MEGA_BOMB, UPGRADE_MEGA_DMG }
+enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB, RACER, MEGA_BOMB, UPGRADE_MEGA_DMG, POLICE }
 
 const TOWER_CONFIGS: Dictionary = {
 	TowerType.TURRET: {
@@ -67,7 +67,19 @@ const TOWER_CONFIGS: Dictionary = {
 		"icon": "R",
 		"cost": 50,
 		"item": ItemType.RACER,
-		"pierce": 5,  # car hits up to 5 enemies in a line
+		"pierce": 5,
+	},
+	TowerType.POLICE: {
+		"name": "Police",
+		"damage": 12,
+		"range": 3.0,
+		"cooldown": 2.0,
+		"color": Color(0.15, 0.25, 0.5),
+		"icon": "P",
+		"cost": 35,
+		"item": ItemType.POLICE,
+		"slow": 0.5,
+		"pierce": 3,
 	},
 }
 
@@ -83,6 +95,7 @@ const ITEM_CONFIGS: Dictionary = {
 	ItemType.RACER: {"name": "Racer", "color": Color(0.9, 0.1, 0.1), "type": "tower", "tower": TowerType.RACER, "cost": 50},
 	ItemType.MEGA_BOMB: {"name": "MegaBomb", "color": Color(1.0, 0.4, 0.0), "type": "mega_bomb", "cost": 20},
 	ItemType.UPGRADE_MEGA_DMG: {"name": "++DMG", "color": Color(1.0, 0.3, 0.0), "type": "upgrade", "stat": "damage", "value": 8, "cost": 30},
+	ItemType.POLICE: {"name": "Police", "color": Color(0.15, 0.25, 0.5), "type": "tower", "tower": TowerType.POLICE, "cost": 35},
 }
 
 # Shop slot machine weights
@@ -99,12 +112,13 @@ const SHOP_POOL: Array = [
 
 # Premium shop pool ($50 spin)
 const PREMIUM_POOL: Array = [
-	{"item": ItemType.RACER, "weight": 25},
-	{"item": ItemType.TESLA, "weight": 20},
-	{"item": ItemType.TREBUCHET, "weight": 15},
+	{"item": ItemType.RACER, "weight": 20},
+	{"item": ItemType.POLICE, "weight": 20},
+	{"item": ItemType.TESLA, "weight": 15},
+	{"item": ItemType.TREBUCHET, "weight": 10},
 	{"item": ItemType.MEGA_BOMB, "weight": 15},
-	{"item": ItemType.UPGRADE_MEGA_DMG, "weight": 15},
-	{"item": ItemType.UPGRADE_RANGE, "weight": 10},
+	{"item": ItemType.UPGRADE_MEGA_DMG, "weight": 12},
+	{"item": ItemType.UPGRADE_RANGE, "weight": 8},
 ]
 
 const SPIN_COST: int = 10

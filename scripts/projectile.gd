@@ -4,39 +4,46 @@ var from_pos: Vector2
 var to_pos: Vector2
 var progress: float = 0.0
 var done: bool = false
-var is_car: bool = false
+var car_type: String = ""  # "", "f1", "police"
 var car_sprite: Sprite2D = null
 
 static var f1_texture: Texture2D = null
+static var police_texture: Texture2D = null
 
-func setup(p_from: Vector2, p_to: Vector2, p_is_car: bool = false) -> void:
+func setup(p_from: Vector2, p_to: Vector2, p_car_type: String = "") -> void:
 	from_pos = p_from
 	to_pos = p_to
 	global_position = from_pos
-	is_car = p_is_car
-	if is_car:
-		if f1_texture == null:
-			f1_texture = load("res://sprites/projectile_f1.png")
+	car_type = p_car_type
+	if car_type != "":
+		var tex: Texture2D
+		if car_type == "police":
+			if police_texture == null:
+				police_texture = load("res://sprites/projectile_police.png")
+			tex = police_texture
+		else:
+			if f1_texture == null:
+				f1_texture = load("res://sprites/projectile_f1.png")
+			tex = f1_texture
 		car_sprite = Sprite2D.new()
-		car_sprite.texture = f1_texture
+		car_sprite.texture = tex
 		car_sprite.scale = Vector2(2.5, 2.5)
 		add_child(car_sprite)
-		# Rotate sprite to face direction of travel
 		var dir: Vector2 = to_pos - from_pos
 		car_sprite.rotation = dir.angle()
 
 func _process(delta: float) -> void:
 	if done:
 		return
-	var spd: float = 3.0 if is_car else 6.0
+	var spd: float = 3.0 if car_type != "" else 6.0
 	progress += delta * spd
 	if progress >= 1.0:
 		done = true
 		return
 	global_position = from_pos.lerp(to_pos, progress)
-	if not is_car:
+	if car_type == "":
 		queue_redraw()
 
 func _draw() -> void:
-	if not is_car:
+	if car_type == "":
 		draw_circle(Vector2.ZERO, 3.0, Color(1.0, 0.9, 0.3))

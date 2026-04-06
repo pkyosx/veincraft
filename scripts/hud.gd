@@ -58,6 +58,7 @@ func _load_item_icons() -> void:
 	item_icons[GameData.ItemType.RACER] = load("res://sprites/icon_racer.png")
 	item_icons[GameData.ItemType.MEGA_BOMB] = load("res://sprites/icon_mega_bomb.png")
 	item_icons[GameData.ItemType.UPGRADE_MEGA_DMG] = load("res://sprites/icon_mega_dmg.png")
+	item_icons[GameData.ItemType.POLICE] = load("res://sprites/icon_police.png")
 
 func _build_ui() -> void:
 	# Right panel background

@@ -334,7 +334,14 @@ func _process_towers(delta: float) -> void:
 			tower["timer"] = tower["cooldown"]
 			var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
 
-			# Frost tower: slow enemies
+			# Determine car projectile type
+			var proj_car: String = ""
+			if tower["type"] == GameData.TowerType.RACER:
+				proj_car = "f1"
+			elif tower["type"] == GameData.TowerType.POLICE:
+				proj_car = "police"
+
+			# Frost/Police tower: slow enemies
 			if "slow" in tc:
 				best_enemy.apply_slow(tc["slow"], 2.0)
 
@@ -385,13 +392,15 @@ func _process_towers(delta: float) -> void:
 					if hits >= pierce_count:
 						break
 					entry["enemy"].take_damage(tower["damage"])
-					_spawn_projectile(last_pos, entry["enemy"].global_position, true)
+					_spawn_projectile(last_pos, entry["enemy"].global_position, proj_car)
+					if "slow" in tc:
+						entry["enemy"].apply_slow(tc["slow"], 2.0)
 					last_pos = entry["enemy"].global_position
 					hits += 1
 					screen_shake(6.0, 0.1)
 				if hits == 0:
 					best_enemy.take_damage(tower["damage"])
-					_spawn_projectile(tower_world, best_enemy.global_position, true)
+					_spawn_projectile(tower_world, best_enemy.global_position, proj_car)
 			else:
 				best_enemy.take_damage(tower["damage"])
 				_spawn_projectile(tower_world, best_enemy.global_position)
@@ -410,12 +419,12 @@ func _spawn_coins(pos: Vector2, value: int) -> void:
 		# Stagger slightly so they don't all fly at once
 		coin.progress = -i * 0.08
 
-func _spawn_projectile(from: Vector2, to: Vector2, is_car: bool = false) -> void:
+func _spawn_projectile(from: Vector2, to: Vector2, car_type: String = "") -> void:
 	var script: GDScript = load("res://scripts/projectile.gd")
 	var p: Node2D = Node2D.new()
 	p.set_script(script)
 	projectile_container.add_child(p)
-	p.setup(from, to, is_car)
+	p.setup(from, to, car_type)
 	projectiles.append(p)
 
 func _process_enemies(_delta: float) -> void:
@@ -618,6 +627,7 @@ func _draw_towers() -> void:
 		GameData.TowerType.FROST: 2,
 		GameData.TowerType.TESLA: 3,
 		GameData.TowerType.RACER: 4,
+		GameData.TowerType.POLICE: 5,
 	}
 	for pos in towers:
 		var tower: Dictionary = towers[pos]
