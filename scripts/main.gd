@@ -385,13 +385,13 @@ func _process_towers(delta: float) -> void:
 					if hits >= pierce_count:
 						break
 					entry["enemy"].take_damage(tower["damage"])
-					_spawn_projectile(last_pos, entry["enemy"].global_position)
+					_spawn_projectile(last_pos, entry["enemy"].global_position, true)
 					last_pos = entry["enemy"].global_position
 					hits += 1
 					screen_shake(6.0, 0.1)
 				if hits == 0:
 					best_enemy.take_damage(tower["damage"])
-					_spawn_projectile(tower_world, best_enemy.global_position)
+					_spawn_projectile(tower_world, best_enemy.global_position, true)
 			else:
 				best_enemy.take_damage(tower["damage"])
 				_spawn_projectile(tower_world, best_enemy.global_position)
@@ -410,12 +410,12 @@ func _spawn_coins(pos: Vector2, value: int) -> void:
 		# Stagger slightly so they don't all fly at once
 		coin.progress = -i * 0.08
 
-func _spawn_projectile(from: Vector2, to: Vector2) -> void:
+func _spawn_projectile(from: Vector2, to: Vector2, is_car: bool = false) -> void:
 	var script: GDScript = load("res://scripts/projectile.gd")
 	var p: Node2D = Node2D.new()
 	p.set_script(script)
 	projectile_container.add_child(p)
-	p.setup(from, to)
+	p.setup(from, to, is_car)
 	projectiles.append(p)
 
 func _process_enemies(_delta: float) -> void:
