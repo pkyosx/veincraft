@@ -39,6 +39,11 @@ static var enemy_textures: Dictionary = {}  # EnemyType -> Texture2D
 var shock_timer: float = 0.0
 const SHOCK_DURATION: float = 0.3
 
+# Slime bounce animation
+var bounce_phase: float = 0.0
+const BOUNCE_SPEED: float = 6.0  # hops per second
+var is_slime: bool = false
+
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
 	game = p_game
@@ -61,6 +66,8 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 			enemy_textures[enemy_type] = load("res://sprites/" + sprite_file)
 
 	var tex: Texture2D = enemy_textures.get(enemy_type, null)
+	is_slime = config.get("name", "") == "Slime" or config.get("name", "") == "Mushroom"
+
 	if tex:
 		sprite = Sprite2D.new()
 		sprite.texture = tex
@@ -142,6 +149,30 @@ func _process(delta: float) -> void:
 			sprite.modulate = Color.WHITE
 			sprite.offset = Vector2.ZERO
 			sprite.scale = Vector2(1.2, 1.2)
+
+	# Slime squash & stretch bounce
+	if sprite and is_slime and not is_dead:
+		bounce_phase += delta * BOUNCE_SPEED * TAU
+		# Use sin for smooth cycle: 0=ground, PI/2=peak, PI=ground
+		var t: float = sin(bounce_phase)  # -1 to 1
+		var abs_t: float = abs(t)
+		# Jump height (vertical offset)
+		var hop_height: float = abs_t * 12.0
+		# Squash/stretch: when on ground (t near 0) = squash, when airborne = stretch
+		var squash: float
+		var stretch: float
+		if abs_t < 0.3:
+			# Ground contact: squash wide & flat
+			var ground_mix: float = 1.0 - abs_t / 0.3
+			squash = 1.2 * (1.0 + ground_mix * 0.25)   # wider
+			stretch = 1.2 * (1.0 - ground_mix * 0.2)    # shorter
+		else:
+			# Airborne: stretch tall & narrow
+			var air_mix: float = (abs_t - 0.3) / 0.7
+			squash = 1.2 * (1.0 - air_mix * 0.15)       # narrower
+			stretch = 1.2 * (1.0 + air_mix * 0.2)        # taller
+		sprite.scale = Vector2(squash, stretch)
+		sprite.offset = Vector2(sprite.offset.x, -hop_height)
 
 	queue_redraw()
 
