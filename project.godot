@@ -16,15 +16,13 @@ config/features=PackedStringArray("4.6")
 
 [autoload]
 
-MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
-MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
-MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"
 Audio="*res://scripts/audio_manager.gd"
 
 [display]
 
 window/size/viewport_width=1600.0
 window/size/viewport_height=900.0
+window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
