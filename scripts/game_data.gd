@@ -107,7 +107,7 @@ const ENEMY_CONFIGS: Dictionary = {
 	EnemyType.SLIME: {
 		"name": "Slime", "hp_mult": 0.8, "speed_mult": 0.9,
 		"color": Color(0.4, 0.7, 0.3), "color_light": Color(0.5, 0.8, 0.4),
-		"radius": 10.0, "gold": 2, "sprite": "monster_slime.png",
+		"radius": 10.0, "gold": 2, "sprite": "monster_slime_sheet.png", "frames": 6,
 	},
 	EnemyType.SKELETON: {
 		"name": "Skeleton", "hp_mult": 0.6, "speed_mult": 1.6,
@@ -127,7 +127,7 @@ const ENEMY_CONFIGS: Dictionary = {
 	EnemyType.MUSHROOM: {
 		"name": "Mushroom", "hp_mult": 2.0, "speed_mult": 0.6,
 		"color": Color(0.5, 0.3, 0.6), "color_light": Color(0.6, 0.4, 0.7),
-		"radius": 12.0, "gold": 5, "sprite": "monster_mushroom.png",
+		"radius": 12.0, "gold": 5, "sprite": "monster_mushroom_sheet.png", "frames": 6,
 	},
 	EnemyType.BAT: {
 		"name": "Bat", "hp_mult": 0.5, "speed_mult": 1.8,
