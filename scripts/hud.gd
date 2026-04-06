@@ -4,7 +4,7 @@ var hp_label: Label
 var gold_label: Label
 var wave_label: Label
 var phase_label: Label
-var bag_container: HBoxContainer
+var bag_container: GridContainer
 var btn_spin: Button
 var btn_premium_spin: Button
 var btn_play: Button
@@ -107,19 +107,19 @@ func _build_ui() -> void:
 
 	bag_container = GridContainer.new()
 	bag_container.columns = 4
-	bag_container.position = Vector2(1180, 250)
+	bag_container.position = Vector2(1180, 245)
 	add_child(bag_container)
 
 	for i in range(GameData.MAX_BAG):
 		var btn: Button = Button.new()
-		btn.custom_minimum_size = Vector2(80, 80)
+		btn.custom_minimum_size = Vector2(70, 70)
 		btn.text = ""
 		btn.pressed.connect(func() -> void: game.select_bag_item(i))
 		# Icon inside button
 		var icon: TextureRect = TextureRect.new()
 		icon.name = "Icon"
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = Vector2(64, 64)
+		icon.custom_minimum_size = Vector2(54, 54)
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(icon)
 		bag_container.add_child(btn)
@@ -130,15 +130,15 @@ func _build_ui() -> void:
 	spin_display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	spin_display.add_theme_font_size_override("font_size", 26)
 	spin_display.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
-	spin_display.position = Vector2(1180, 440)
+	spin_display.position = Vector2(1180, 400)
 	spin_display.custom_minimum_size = Vector2(340, 45)
 	add_child(spin_display)
 
 	# Shop button
 	btn_spin = Button.new()
 	btn_spin.text = "Spin! ($" + str(GameData.SPIN_COST) + ")"
-	btn_spin.custom_minimum_size = Vector2(340, 50)
-	btn_spin.position = Vector2(1180, 495)
+	btn_spin.custom_minimum_size = Vector2(165, 45)
+	btn_spin.position = Vector2(1180, 450)
 	btn_spin.add_theme_font_size_override("font_size", 20)
 	btn_spin.pressed.connect(_on_spin_pressed)
 	add_child(btn_spin)
@@ -146,8 +146,8 @@ func _build_ui() -> void:
 	# Premium spin button
 	btn_premium_spin = Button.new()
 	btn_premium_spin.text = "Premium Spin! ($" + str(GameData.PREMIUM_SPIN_COST) + ")"
-	btn_premium_spin.custom_minimum_size = Vector2(340, 50)
-	btn_premium_spin.position = Vector2(1180, 550)
+	btn_premium_spin.custom_minimum_size = Vector2(165, 45)
+	btn_premium_spin.position = Vector2(1350, 450)
 	btn_premium_spin.add_theme_font_size_override("font_size", 20)
 	btn_premium_spin.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 	btn_premium_spin.pressed.connect(_on_premium_spin_pressed)
@@ -157,19 +157,19 @@ func _build_ui() -> void:
 	var shop_title: Label = Label.new()
 	shop_title.text = "Buy Tower"
 	shop_title.add_theme_font_size_override("font_size", 18)
-	shop_title.position = Vector2(1180, 615)
+	shop_title.position = Vector2(1180, 505)
 	add_child(shop_title)
 
 	var tower_grid: GridContainer = GridContainer.new()
-	tower_grid.columns = 2
-	tower_grid.position = Vector2(1180, 645)
+	tower_grid.columns = 3
+	tower_grid.position = Vector2(1180, 530)
 	tower_grid.name = "TowerGrid"
 	add_child(tower_grid)
 
 	for tower_type in GameData.TOWER_CONFIGS:
 		var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
 		var btn: Button = Button.new()
-		btn.custom_minimum_size = Vector2(165, 45)
+		btn.custom_minimum_size = Vector2(105, 40)
 		btn.text = tc["name"] + " $" + str(tc["cost"])
 		var captured_type: int = tower_type
 		btn.pressed.connect(func() -> void: _buy_tower(captured_type))
@@ -179,7 +179,7 @@ func _build_ui() -> void:
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(1180, 755)
+	btn_play.position = Vector2(1180, 625)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -188,7 +188,7 @@ func _build_ui() -> void:
 	btn_speed = Button.new()
 	btn_speed.text = "Speed: 1x"
 	btn_speed.custom_minimum_size = Vector2(340, 45)
-	btn_speed.position = Vector2(1180, 815)
+	btn_speed.position = Vector2(1180, 685)
 	btn_speed.add_theme_font_size_override("font_size", 20)
 	btn_speed.pressed.connect(_on_speed_pressed)
 	add_child(btn_speed)
