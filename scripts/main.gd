@@ -70,32 +70,7 @@ func _init_grid() -> void:
 		grid[p.y][p.x] = GameData.Cell.PATH
 		path_set[p] = true
 
-	# Place some rocks and trees
-	var obstacles: Array[Vector2i] = [
-		Vector2i(3, 0), Vector2i(7, 0), Vector2i(11, 0), Vector2i(15, 0),
-		Vector2i(0, 2), Vector2i(10, 2), Vector2i(14, 2), Vector2i(5, 2),
-		Vector2i(0, 4), Vector2i(6, 4), Vector2i(10, 4), Vector2i(14, 4),
-		Vector2i(2, 6), Vector2i(8, 6), Vector2i(14, 6), Vector2i(16, 6),
-		Vector2i(0, 8), Vector2i(2, 8), Vector2i(10, 8), Vector2i(15, 8),
-		Vector2i(6, 10), Vector2i(10, 10), Vector2i(14, 10), Vector2i(16, 10),
-		Vector2i(0, 10), Vector2i(3, 11), Vector2i(8, 11), Vector2i(12, 11),
-	]
-	for obs in obstacles:
-		if grid[obs.y][obs.x] == GameData.Cell.EMPTY:
-			grid[obs.y][obs.x] = GameData.Cell.ROCK if randf() > 0.4 else GameData.Cell.TREE
-			# ~40% chance to hide a treasure
-			if randf() < 0.4:
-				var treasure_roll: float = randf()
-				if treasure_roll < 0.3:
-					hidden_treasures[obs] = "gold"  # bonus gold
-				elif treasure_roll < 0.55:
-					hidden_treasures[obs] = GameData.ItemType.TURRET
-				elif treasure_roll < 0.75:
-					hidden_treasures[obs] = GameData.ItemType.UPGRADE_DMG
-				elif treasure_roll < 0.9:
-					hidden_treasures[obs] = GameData.ItemType.UPGRADE_SPEED
-				else:
-					hidden_treasures[obs] = GameData.ItemType.TREBUCHET
+	# No obstacles
 
 func cell_to_world(pos: Vector2i) -> Vector2:
 	return GameData.GRID_OFFSET + Vector2(pos.x * GameData.CELL_SIZE + GameData.CELL_SIZE / 2, pos.y * GameData.CELL_SIZE + GameData.CELL_SIZE / 2)
