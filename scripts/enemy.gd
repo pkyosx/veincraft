@@ -39,6 +39,10 @@ static var enemy_textures: Dictionary = {}  # EnemyType -> Texture2D
 var shock_timer: float = 0.0
 const SHOCK_DURATION: float = 0.3
 
+# Burn effect
+var burn_dps: float = 0.0
+var burn_timer: float = 0.0
+
 # Sprite sheet animation
 var total_frames: int = 1
 var frame_timer: float = 0.0
@@ -88,12 +92,32 @@ func apply_slow(factor: float, duration: float) -> void:
 func apply_shock() -> void:
 	shock_timer = SHOCK_DURATION
 
+func apply_burn(dps: float, duration: float) -> void:
+	burn_dps = dps
+	burn_timer = duration
+
+func apply_knockback(cells: int) -> void:
+	path_index = max(1, path_index - cells)
+	path_progress = max(0.0, path_progress - cells)
+	if path_index < path.size():
+		global_position = game.cell_to_world(path[path_index])
+
 func _process(delta: float) -> void:
 	if is_dead or reached_end:
 		return
 	if path_index >= path.size():
 		reached_end = true
 		return
+
+	# Burn damage over time
+	if burn_timer > 0:
+		burn_timer -= delta
+		hp -= int(burn_dps * delta)
+		if hp <= 0:
+			hp = 0
+			is_dead = true
+		if burn_timer <= 0:
+			burn_dps = 0.0
 
 	# Slow effect countdown
 	if slow_timer > 0:
@@ -136,6 +160,11 @@ func _process(delta: float) -> void:
 			sprite.offset = Vector2(randf_range(-2, 2), randf_range(-2, 2))
 		else:
 			pass
+	elif burn_timer > 0:
+		if sprite:
+			# Burning: orange flicker
+			var flicker: float = 0.7 + sin(burn_timer * 12.0) * 0.3
+			sprite.modulate = Color(1.0, 0.5 * flicker, 0.1)
 	elif slow_timer > 0:
 		if sprite:
 			# Frozen: blue tint + slight scale pulse
@@ -181,6 +210,20 @@ func take_damage(amount: int) -> void:
 		tween.parallel().tween_property(self, "modulate:a", 0.0, 0.15)
 
 func _draw() -> void:
+	# Ground shadow
+	if not is_dead:
+		draw_circle(Vector2(2, 8), radius * 0.9, Color(0, 0, 0, 0.2))
+
+	# Burn fire particles
+	if burn_timer > 0:
+		var t: float = Time.get_ticks_msec() / 1000.0
+		for i in range(3):
+			var fx: float = sin(t * 5.0 + i * 2.0) * 6
+			var fy: float = -8 - abs(sin(t * 7.0 + i * 1.5)) * 10
+			var alpha: float = 0.5 + sin(t * 8.0 + i) * 0.3
+			draw_circle(Vector2(fx, fy), 3.0, Color(1.0, 0.6, 0.0, alpha))
+			draw_circle(Vector2(fx * 0.5, fy - 4), 2.0, Color(1.0, 0.9, 0.2, alpha * 0.6))
+
 	# Status effect overlays (drawn on top of sprite)
 	if slow_timer > 0:
 		# Frozen: draw ice crystals around character

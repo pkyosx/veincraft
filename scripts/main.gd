@@ -318,6 +318,10 @@ func _process_towers(delta: float) -> void:
 				proj_car = "f1"
 			elif tower["type"] == GameData.TowerType.POLICE:
 				proj_car = "police"
+			elif tower["type"] == GameData.TowerType.FIRETRUCK:
+				proj_car = "firetruck"
+			elif tower["type"] == GameData.TowerType.MONSTERTRUCK:
+				proj_car = "monstertruck"
 
 			# Frost/Police tower: slow enemies
 			if "slow" in tc:
@@ -373,6 +377,10 @@ func _process_towers(delta: float) -> void:
 					_spawn_projectile(last_pos, entry["enemy"].global_position, proj_car)
 					if "slow" in tc:
 						entry["enemy"].apply_slow(tc["slow"], 2.0)
+					if "burn" in tc:
+						entry["enemy"].apply_burn(tc["burn"], 3.0)
+					if "knockback" in tc:
+						entry["enemy"].apply_knockback(tc["knockback"])
 					last_pos = entry["enemy"].global_position
 					hits += 1
 					screen_shake(6.0, 0.1)
@@ -536,28 +544,43 @@ func _draw() -> void:
 	_draw_notification()
 
 func _draw_grid() -> void:
-	# Grass tile from tilemap: center tile at row 1, col 1 (64x64 each in 576x384 sheet)
 	var grass_src: Rect2 = Rect2(64, 64, 64, 64)
+	var cs: int = GameData.CELL_SIZE
 	for y in range(GameData.GRID_H):
 		for x in range(GameData.GRID_W):
-			var rect: Rect2 = Rect2(GameData.GRID_OFFSET + Vector2(x * GameData.CELL_SIZE, y * GameData.CELL_SIZE), Vector2(GameData.CELL_SIZE, GameData.CELL_SIZE))
+			var pos: Vector2 = GameData.GRID_OFFSET + Vector2(x * cs, y * cs)
+			var rect: Rect2 = Rect2(pos, Vector2(cs, cs))
 			var cell: int = grid[y][x]
-			# Draw grass ground for all cells
+			# Draw grass with subtle gradient for depth
 			if grass_texture:
 				draw_texture_rect_region(grass_texture, rect, grass_src)
 			else:
 				draw_rect(rect, Color(0.18, 0.18, 0.22))
-			# Draw dirt path overlay
+			# Subtle lighting gradient on grass (top-left lighter)
+			var light: float = 0.02 - float(x + y) * 0.001
+			if light > 0:
+				draw_rect(rect, Color(1, 1, 0.9, light))
+			# Draw dirt path with 3D sunken effect
 			if cell == GameData.Cell.PATH:
-				draw_rect(rect, Color(0.55, 0.42, 0.28))
-			# Draw decorations on top
+				# Dark base
+				draw_rect(rect, Color(0.45, 0.34, 0.22))
+				# Inner lighter area (sunken floor)
+				var inset: Rect2 = Rect2(pos + Vector2(2, 2), Vector2(cs - 4, cs - 4))
+				draw_rect(inset, Color(0.55, 0.42, 0.28))
+				# Top-left highlight (rim light)
+				draw_line(pos, pos + Vector2(cs, 0), Color(0.35, 0.28, 0.18, 0.6), 2.0)
+				draw_line(pos, pos + Vector2(0, cs), Color(0.35, 0.28, 0.18, 0.6), 2.0)
+				# Bottom-right shadow (depth)
+				draw_line(pos + Vector2(0, cs), pos + Vector2(cs, cs), Color(0.65, 0.52, 0.38, 0.4), 1.5)
+				draw_line(pos + Vector2(cs, 0), pos + Vector2(cs, cs), Color(0.65, 0.52, 0.38, 0.4), 1.5)
+			# Decorations
 			match cell:
 				GameData.Cell.ROCK:
 					_draw_rock(rect.get_center(), x + y)
 				GameData.Cell.TREE:
 					_draw_tree(rect.get_center())
-			# Cell border (subtle)
-			draw_rect(rect, Color(0.2, 0.3, 0.15, 0.3), false, 1.0)
+			# Cell border with depth
+			draw_rect(rect, Color(0.15, 0.25, 0.1, 0.2), false, 1.0)
 
 func _draw_rock(center: Vector2, seed_val: int = 0) -> void:
 	if rock_textures.size() > 0:
@@ -606,25 +629,29 @@ func _draw_towers() -> void:
 		GameData.TowerType.TESLA: 3,
 		GameData.TowerType.RACER: 4,
 		GameData.TowerType.POLICE: 5,
+		GameData.TowerType.FIRETRUCK: 6,
+		GameData.TowerType.MONSTERTRUCK: 8,
 	}
 	for pos in towers:
 		var tower: Dictionary = towers[pos]
 		var center: Vector2 = cell_to_world(pos)
 		var tc: Dictionary = GameData.TOWER_CONFIGS[tower["type"]]
-		# Draw tower sprite
+		var dst_size: float = 42.0
+		# Shadow (offset down-right, dark ellipse)
+		draw_circle(center + Vector2(3, 5), dst_size * 0.35, Color(0, 0, 0, 0.25))
+		# Draw tower sprite (lifted up slightly)
+		var lift: Vector2 = Vector2(0, -4)
 		if tower_texture:
 			var frame: int = tower_frame_map.get(tower["type"], 0)
 			var src_rect: Rect2 = Rect2(frame * 64, 0, 64, 64)
-			var dst_size: float = 42.0
-			var dst_rect: Rect2 = Rect2(center - Vector2(dst_size / 2, dst_size / 2), Vector2(dst_size, dst_size))
+			var dst_rect: Rect2 = Rect2(center + lift - Vector2(dst_size / 2, dst_size / 2), Vector2(dst_size, dst_size))
 			draw_texture_rect_region(tower_texture, dst_rect, src_rect)
 		else:
-			# Fallback: colored rectangles
-			draw_rect(Rect2(center - Vector2(20, 20), Vector2(40, 40)), tc["color"].darkened(0.3))
-			draw_rect(Rect2(center - Vector2(16, 16), Vector2(32, 32)), tc["color"])
+			draw_rect(Rect2(center + lift - Vector2(20, 20), Vector2(40, 40)), tc["color"].darkened(0.3))
+			draw_rect(Rect2(center + lift - Vector2(16, 16), Vector2(32, 32)), tc["color"])
 		# Range circle (build phase only)
 		if phase == "build":
-			draw_arc(center, tower["range"] * GameData.CELL_SIZE, 0, TAU, 48, Color(1, 1, 1, 0.1), 1.0)
+			draw_arc(center, tower["range"] * GameData.CELL_SIZE, 0, TAU, 48, Color(1, 1, 1, 0.12), 1.5)
 
 func _draw_upgrades() -> void:
 	for pos in upgrades:

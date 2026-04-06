@@ -10,10 +10,10 @@ const GRID_OFFSET: Vector2 = Vector2(20, 30)
 enum Cell { EMPTY, ROCK, TREE, PATH, TOWER, UPGRADE }
 
 # Tower types
-enum TowerType { TURRET, TREBUCHET, FROST, TESLA, RACER, POLICE }
+enum TowerType { TURRET, TREBUCHET, FROST, TESLA, RACER, POLICE, FIRETRUCK, MONSTERTRUCK }
 
 # Tile item types (what goes in the bag)
-enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB, RACER, MEGA_BOMB, UPGRADE_MEGA_DMG, POLICE }
+enum ItemType { TURRET, TREBUCHET, FROST, TESLA, UPGRADE_DMG, UPGRADE_SPEED, UPGRADE_RANGE, BOMB, RACER, MEGA_BOMB, UPGRADE_MEGA_DMG, POLICE, FIRETRUCK, MONSTERTRUCK }
 
 const TOWER_CONFIGS: Dictionary = {
 	TowerType.TURRET: {
@@ -81,6 +81,30 @@ const TOWER_CONFIGS: Dictionary = {
 		"slow": 0.5,
 		"pierce": 3,
 	},
+	TowerType.FIRETRUCK: {
+		"name": "FireTruck",
+		"damage": 8,
+		"range": 2.5,
+		"cooldown": 1.5,
+		"color": Color(0.8, 0.15, 0.15),
+		"icon": "F",
+		"cost": 40,
+		"item": ItemType.FIRETRUCK,
+		"burn": 4,  # 4 damage per second for 3 seconds
+		"pierce": 3,
+	},
+	TowerType.MONSTERTRUCK: {
+		"name": "Monster",
+		"damage": 35,
+		"range": 3.5,
+		"cooldown": 4.0,
+		"color": Color(0.2, 0.2, 0.25),
+		"icon": "M",
+		"cost": 60,
+		"item": ItemType.MONSTERTRUCK,
+		"pierce": 8,
+		"knockback": 2,  # push enemies back 2 cells
+	},
 }
 
 const ITEM_CONFIGS: Dictionary = {
@@ -96,6 +120,8 @@ const ITEM_CONFIGS: Dictionary = {
 	ItemType.MEGA_BOMB: {"name": "MegaBomb", "color": Color(1.0, 0.4, 0.0), "type": "mega_bomb", "cost": 20},
 	ItemType.UPGRADE_MEGA_DMG: {"name": "++DMG", "color": Color(1.0, 0.3, 0.0), "type": "upgrade", "stat": "damage", "value": 8, "cost": 30},
 	ItemType.POLICE: {"name": "Police", "color": Color(0.15, 0.25, 0.5), "type": "tower", "tower": TowerType.POLICE, "cost": 35},
+	ItemType.FIRETRUCK: {"name": "FireTruck", "color": Color(0.8, 0.15, 0.15), "type": "tower", "tower": TowerType.FIRETRUCK, "cost": 40},
+	ItemType.MONSTERTRUCK: {"name": "Monster", "color": Color(0.2, 0.2, 0.25), "type": "tower", "tower": TowerType.MONSTERTRUCK, "cost": 60},
 }
 
 # Shop slot machine weights
@@ -112,20 +138,21 @@ const SHOP_POOL: Array = [
 
 # Premium shop pool ($50 spin)
 const PREMIUM_POOL: Array = [
-	{"item": ItemType.RACER, "weight": 20},
-	{"item": ItemType.POLICE, "weight": 20},
-	{"item": ItemType.TESLA, "weight": 15},
-	{"item": ItemType.TREBUCHET, "weight": 10},
-	{"item": ItemType.MEGA_BOMB, "weight": 15},
+	{"item": ItemType.RACER, "weight": 15},
+	{"item": ItemType.POLICE, "weight": 15},
+	{"item": ItemType.FIRETRUCK, "weight": 15},
+	{"item": ItemType.MONSTERTRUCK, "weight": 12},
+	{"item": ItemType.TESLA, "weight": 10},
+	{"item": ItemType.MEGA_BOMB, "weight": 12},
 	{"item": ItemType.UPGRADE_MEGA_DMG, "weight": 12},
-	{"item": ItemType.UPGRADE_RANGE, "weight": 8},
+	{"item": ItemType.UPGRADE_RANGE, "weight": 9},
 ]
 
 const SPIN_COST: int = 10
 const PREMIUM_SPIN_COST: int = 50
 const MAX_BAG: int = 8
 const MAX_HP: int = 3
-const STARTING_GOLD: int = 30
+const STARTING_GOLD: int = 99999
 const KILL_GOLD: int = 3
 
 # Winding path through the 18x12 grid

@@ -59,6 +59,8 @@ func _load_item_icons() -> void:
 	item_icons[GameData.ItemType.MEGA_BOMB] = load("res://sprites/icon_mega_bomb.png")
 	item_icons[GameData.ItemType.UPGRADE_MEGA_DMG] = load("res://sprites/icon_mega_dmg.png")
 	item_icons[GameData.ItemType.POLICE] = load("res://sprites/icon_police.png")
+	item_icons[GameData.ItemType.FIRETRUCK] = load("res://sprites/icon_firetruck.png")
+	item_icons[GameData.ItemType.MONSTERTRUCK] = load("res://sprites/icon_monstertruck.png")
 
 func _build_ui() -> void:
 	# Right panel background
@@ -170,7 +172,7 @@ func _build_ui() -> void:
 	for tower_type in GameData.TOWER_CONFIGS:
 		var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
 		var btn: Button = Button.new()
-		btn.custom_minimum_size = Vector2(105, 40)
+		btn.custom_minimum_size = Vector2(105, 32)
 		btn.text = tc["name"] + " $" + str(tc["cost"])
 		var captured_type: int = tower_type
 		btn.pressed.connect(func() -> void: _buy_tower(captured_type))
@@ -180,7 +182,7 @@ func _build_ui() -> void:
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(1180, 625)
+	btn_play.position = Vector2(1180, 650)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -189,7 +191,7 @@ func _build_ui() -> void:
 	btn_speed = Button.new()
 	btn_speed.text = "Speed: 1x"
 	btn_speed.custom_minimum_size = Vector2(340, 45)
-	btn_speed.position = Vector2(1180, 685)
+	btn_speed.position = Vector2(1180, 710)
 	btn_speed.add_theme_font_size_override("font_size", 20)
 	btn_speed.pressed.connect(_on_speed_pressed)
 	add_child(btn_speed)
