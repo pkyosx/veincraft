@@ -293,5 +293,6 @@ func refresh(p_hp: int, p_gold: int, p_wave: int, p_max_waves: int, p_bag: Array
 
 	if p_game_over:
 		end_panel.visible = true
-		end_text.text = "Game Over!\nSurvived " + str(p_wave) + " waves"
+		var wave_word = "wave" if p_wave == 1 else "waves"
+		end_text.text = "Game Over!\nSurvived " + str(p_wave) + " " + wave_word
 		end_text.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2))
