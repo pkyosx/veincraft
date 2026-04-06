@@ -84,7 +84,7 @@ const SHOP_POOL: Array = [
 ]
 
 const SPIN_COST: int = 10
-const MAX_BAG: int = 4
+const MAX_BAG: int = 8
 const MAX_HP: int = 3
 const STARTING_GOLD: int = 30
 const KILL_GOLD: int = 3

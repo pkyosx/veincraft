@@ -148,9 +148,10 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 	elif config["type"] == "bomb":
 		if not is_valid_cell(pos):
 			return false
-		if grid[pos.y][pos.x] == GameData.Cell.ROCK or grid[pos.y][pos.x] == GameData.Cell.TREE:
+		var cell_type: int = grid[pos.y][pos.x]
+		if cell_type == GameData.Cell.ROCK or cell_type == GameData.Cell.TREE:
 			grid[pos.y][pos.x] = GameData.Cell.EMPTY
-			get_node("/root/Audio").play_sfx("kill", 2.0)  # bomb explosion
+			get_node("/root/Audio").play_sfx("kill", 2.0)
 			# Check for hidden treasure
 			if pos in hidden_treasures:
 				get_node("/root/Audio").play_sfx("treasure", 3.0)
@@ -165,9 +166,28 @@ func place_item(pos: Vector2i, item_type: int) -> bool:
 						var tname: String = GameData.ITEM_CONFIGS[treasure]["name"]
 						_show_treasure_notification("Found " + tname + "!", pos)
 					else:
-						# Bag full — convert to gold
 						gold += 10
 						_show_treasure_notification("Bag full! +10 gold", pos)
+			return true
+		elif cell_type == GameData.Cell.TOWER:
+			towers.erase(pos)
+			grid[pos.y][pos.x] = GameData.Cell.EMPTY
+			get_node("/root/Audio").play_sfx("kill", 2.0)
+			# Recalc nearby towers that may have lost adjacency to upgrades
+			var neighbors: Array[Vector2i] = [pos + Vector2i(0,-1), pos + Vector2i(0,1), pos + Vector2i(-1,0), pos + Vector2i(1,0)]
+			for n in neighbors:
+				if n in towers:
+					_recalc_tower_upgrades(n)
+			return true
+		elif cell_type == GameData.Cell.UPGRADE:
+			upgrades.erase(pos)
+			grid[pos.y][pos.x] = GameData.Cell.EMPTY
+			get_node("/root/Audio").play_sfx("kill", 2.0)
+			# Recalc adjacent towers that lost this upgrade
+			var neighbors: Array[Vector2i] = [pos + Vector2i(0,-1), pos + Vector2i(0,1), pos + Vector2i(-1,0), pos + Vector2i(1,0)]
+			for n in neighbors:
+				if n in towers:
+					_recalc_tower_upgrades(n)
 			return true
 		return false
 	return false
@@ -574,7 +594,7 @@ func _draw_hover() -> void:
 			color = Color(0.3, 1, 0.3, 0.25)
 		elif config["type"] == "upgrade" and can_place_upgrade(hovered_cell):
 			color = Color(0.3, 0.7, 1, 0.25)
-		elif config["type"] == "bomb" and is_valid_cell(hovered_cell) and (grid[hovered_cell.y][hovered_cell.x] == GameData.Cell.ROCK or grid[hovered_cell.y][hovered_cell.x] == GameData.Cell.TREE):
+		elif config["type"] == "bomb" and is_valid_cell(hovered_cell) and grid[hovered_cell.y][hovered_cell.x] in [GameData.Cell.ROCK, GameData.Cell.TREE, GameData.Cell.TOWER, GameData.Cell.UPGRADE]:
 			color = Color(1, 0.8, 0, 0.3)
 		else:
 			color = Color(1, 0.2, 0.2, 0.2)

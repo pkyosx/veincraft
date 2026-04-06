@@ -101,7 +101,8 @@ func _build_ui() -> void:
 	bag_title.position = Vector2(1180, 220)
 	add_child(bag_title)
 
-	bag_container = HBoxContainer.new()
+	bag_container = GridContainer.new()
+	bag_container.columns = 4
 	bag_container.position = Vector2(1180, 250)
 	add_child(bag_container)
 
@@ -125,7 +126,7 @@ func _build_ui() -> void:
 	spin_display.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	spin_display.add_theme_font_size_override("font_size", 26)
 	spin_display.add_theme_color_override("font_color", Color(0.6, 0.6, 0.65))
-	spin_display.position = Vector2(1180, 355)
+	spin_display.position = Vector2(1180, 440)
 	spin_display.custom_minimum_size = Vector2(340, 45)
 	add_child(spin_display)
 
@@ -133,7 +134,7 @@ func _build_ui() -> void:
 	btn_spin = Button.new()
 	btn_spin.text = "Spin! ($" + str(GameData.SPIN_COST) + ")"
 	btn_spin.custom_minimum_size = Vector2(340, 50)
-	btn_spin.position = Vector2(1180, 410)
+	btn_spin.position = Vector2(1180, 495)
 	btn_spin.add_theme_font_size_override("font_size", 20)
 	btn_spin.pressed.connect(_on_spin_pressed)
 	add_child(btn_spin)
@@ -142,12 +143,12 @@ func _build_ui() -> void:
 	var shop_title: Label = Label.new()
 	shop_title.text = "Buy Tower"
 	shop_title.add_theme_font_size_override("font_size", 18)
-	shop_title.position = Vector2(1180, 480)
+	shop_title.position = Vector2(1180, 560)
 	add_child(shop_title)
 
 	var tower_grid: GridContainer = GridContainer.new()
 	tower_grid.columns = 2
-	tower_grid.position = Vector2(1180, 510)
+	tower_grid.position = Vector2(1180, 590)
 	tower_grid.name = "TowerGrid"
 	add_child(tower_grid)
 
@@ -164,7 +165,7 @@ func _build_ui() -> void:
 	btn_play = Button.new()
 	btn_play.text = "▶ Play"
 	btn_play.custom_minimum_size = Vector2(340, 55)
-	btn_play.position = Vector2(1180, 620)
+	btn_play.position = Vector2(1180, 700)
 	btn_play.add_theme_font_size_override("font_size", 24)
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
@@ -173,7 +174,7 @@ func _build_ui() -> void:
 	btn_speed = Button.new()
 	btn_speed.text = "Speed: 1x"
 	btn_speed.custom_minimum_size = Vector2(340, 45)
-	btn_speed.position = Vector2(1180, 680)
+	btn_speed.position = Vector2(1180, 760)
 	btn_speed.add_theme_font_size_override("font_size", 20)
 	btn_speed.pressed.connect(_on_speed_pressed)
 	add_child(btn_speed)
