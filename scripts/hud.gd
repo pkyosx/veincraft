@@ -22,6 +22,10 @@ var spin_result: int = -1
 var spin_current_display: int = 0
 var spin_items: Array = []  # all possible items to cycle through
 
+var btn_speed: Button
+var speed_options: Array = [1, 2, 4, 8]
+var speed_index: int = 0
+
 var game: Node2D
 
 func _ready() -> void:
@@ -139,6 +143,15 @@ func _build_ui() -> void:
 	btn_play.pressed.connect(func() -> void: game.start_wave())
 	add_child(btn_play)
 
+	# Speed button
+	btn_speed = Button.new()
+	btn_speed.text = "Speed: 1x"
+	btn_speed.custom_minimum_size = Vector2(340, 45)
+	btn_speed.position = Vector2(1180, 680)
+	btn_speed.add_theme_font_size_override("font_size", 20)
+	btn_speed.pressed.connect(_on_speed_pressed)
+	add_child(btn_speed)
+
 	# End panel (hidden)
 	end_panel = PanelContainer.new()
 	end_panel.visible = false
@@ -163,6 +176,12 @@ func _build_ui() -> void:
 		game.restart()
 	)
 	vbox.add_child(btn_restart)
+
+func _on_speed_pressed() -> void:
+	speed_index = (speed_index + 1) % speed_options.size()
+	var spd: int = speed_options[speed_index]
+	Engine.time_scale = spd
+	btn_speed.text = "Speed: " + str(spd) + "x"
 
 func _buy_tower(tower_type: int) -> void:
 	var tc: Dictionary = GameData.TOWER_CONFIGS[tower_type]
