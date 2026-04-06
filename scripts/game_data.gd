@@ -185,7 +185,7 @@ const ENEMY_PATH: Array[Vector2i] = [
 ]
 
 # Enemy types
-enum EnemyType { SLIME, SKELETON, GOBLIN, WOLF, MUSHROOM, BAT, ORC, WRAITH, DRAGON, GOLEM }
+enum EnemyType { SLIME, SKELETON, GOBLIN, WOLF, MUSHROOM, BAT, ORC, WRAITH, DRAGON, GOLEM, NOOB_BOSS }
 
 const ENEMY_CONFIGS: Dictionary = {
 	EnemyType.SLIME: {
@@ -238,6 +238,12 @@ const ENEMY_CONFIGS: Dictionary = {
 		"color": Color(0.4, 0.4, 0.45), "color_light": Color(0.5, 0.5, 0.55),
 		"radius": 14.0, "gold": 8, "sprite": "monster_golem.png",
 	},
+	EnemyType.NOOB_BOSS: {
+		"name": "Noob Boss", "hp_mult": 50.0, "speed_mult": 0.3,
+		"color": Color(0.96, 0.8, 0.19), "color_light": Color(1.0, 0.9, 0.3),
+		"radius": 20.0, "gold": 100, "sprite": "monster_noob_boss_sheet.png", "frames": 6,
+		"boss": true,
+	},
 }
 
 static func get_enemies_per_wave(wave: int) -> int:
@@ -264,7 +270,16 @@ static func get_wave_composition(wave: int) -> Array:
 		8: wave_pool = [EnemyType.ORC, EnemyType.BAT, EnemyType.GOBLIN]
 		9: wave_pool = [EnemyType.WRAITH, EnemyType.ORC, EnemyType.BAT]
 		10: wave_pool = [EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WRAITH]
+		20: wave_pool = [EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WRAITH]
 		_: wave_pool = [EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WRAITH, EnemyType.ORC]
+
+	# Wave 20: Boss wave! Add Noob Boss at the end
+	if wave == 20:
+		for i in range(total):
+			comp.append(wave_pool[i % wave_pool.size()])
+		comp.append(EnemyType.NOOB_BOSS)
+		return comp
+
 	for i in range(total):
 		comp.append(wave_pool[i % wave_pool.size()])
 	return comp

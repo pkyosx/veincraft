@@ -72,14 +72,17 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 	var tex: Texture2D = enemy_textures.get(enemy_type, null)
 	total_frames = config.get("frames", 1)
 
+	var is_boss: bool = config.get("boss", false)
+
 	if tex:
 		sprite = Sprite2D.new()
 		sprite.texture = tex
 		sprite.hframes = total_frames
 		sprite.frame = 0
-		sprite.scale = Vector2(0.8, 0.8)
+		var base_scale: float = 1.4 if is_boss else 0.8
+		sprite.scale = Vector2(base_scale, base_scale)
 		add_child(sprite)
-		radius = 20.0
+		radius = 28.0 if is_boss else 20.0
 
 	if path.size() > 0:
 		global_position = game.cell_to_world(path[0])
