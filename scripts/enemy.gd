@@ -45,8 +45,11 @@ var burn_timer: float = 0.0
 
 # Sprite sheet animation
 var total_frames: int = 1
+var total_vframes: int = 1
 var frame_timer: float = 0.0
 const FRAME_SPEED: float = 0.18  # seconds per frame
+var base_scale: float = 0.8
+var current_dir: int = 0  # 0=down, 1=right, 2=up, 3=left
 
 func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int = 0) -> void:
 	path = p_path
@@ -71,18 +74,20 @@ func setup(p_path: Array, p_hp: int, p_speed: float, p_game: Node2D, p_type: int
 
 	var tex: Texture2D = enemy_textures.get(enemy_type, null)
 	total_frames = config.get("frames", 1)
+	total_vframes = config.get("vframes", 1)
 
-	var is_boss: bool = config.get("boss", false)
+	if config.get("boss", false):
+		base_scale = 3.5
 
 	if tex:
 		sprite = Sprite2D.new()
 		sprite.texture = tex
 		sprite.hframes = total_frames
+		sprite.vframes = total_vframes
 		sprite.frame = 0
-		var base_scale: float = 1.4 if is_boss else 0.8
 		sprite.scale = Vector2(base_scale, base_scale)
 		add_child(sprite)
-		radius = 28.0 if is_boss else 20.0
+		radius = 28.0 if base_scale > 1.0 else 20.0
 
 	if path.size() > 0:
 		global_position = game.cell_to_world(path[0])
@@ -142,9 +147,18 @@ func _process(delta: float) -> void:
 		global_position += dir.normalized() * move_dist
 		path_progress += move_dist / GameData.CELL_SIZE
 
-	# Flip sprite based on movement direction
-	if sprite and dir.x != 0:
-		sprite.flip_h = dir.x < 0
+	# Face sprite towards movement direction
+	if sprite:
+		var dir_n: Vector2 = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
+		if total_vframes > 1 and dir_n.length() > 0:
+			# 4-direction sprite: pick row based on direction
+			if abs(dir_n.x) > abs(dir_n.y):
+				current_dir = 1 if dir_n.x > 0 else 3
+			else:
+				current_dir = 0 if dir_n.y > 0 else 2
+			sprite.flip_h = false
+		elif dir_n.x != 0 and total_vframes <= 1:
+			sprite.flip_h = dir_n.x < 0
 
 	# Shock effect countdown
 	if shock_timer > 0:
@@ -173,21 +187,23 @@ func _process(delta: float) -> void:
 			# Frozen: blue tint + slight scale pulse
 			sprite.modulate = Color(0.5, 0.7, 1.0)
 			var pulse: float = 1.0 + sin(slow_timer * 8.0) * 0.05
-			sprite.scale = Vector2(0.8 * pulse, 0.8 * pulse)
+			sprite.scale = Vector2(base_scale * pulse, base_scale * pulse)
 		else:
 			pass
 	else:
 		if sprite:
 			sprite.modulate = Color.WHITE
 			sprite.offset = Vector2.ZERO
-			sprite.scale = Vector2(0.8, 0.8)
+			sprite.scale = Vector2(base_scale, base_scale)
 
 	# Sprite sheet frame animation
 	if sprite and total_frames > 1 and not is_dead:
 		frame_timer += delta
 		if frame_timer >= FRAME_SPEED:
 			frame_timer -= FRAME_SPEED
-			sprite.frame = (sprite.frame + 1) % total_frames
+			# For 4-direction sprites: frame = row * hframes + column
+			var col: int = (sprite.frame % total_frames + 1) % total_frames
+			sprite.frame = current_dir * total_frames + col
 
 	queue_redraw()
 
@@ -254,11 +270,13 @@ func _draw() -> void:
 	_draw_hp_bar()
 
 func _draw_hp_bar() -> void:
-	if hp >= max_hp:
+	var is_boss_unit: bool = base_scale > 1.0
+	if hp >= max_hp and not is_boss_unit:
 		return
-	var w: float = radius * 2.4
-	var h: float = 3.0
-	var bar_y: float = -radius - 7
+	var w: float = base_scale * 50.0 if is_boss_unit else radius * 2.4
+	var h: float = 8.0 if is_boss_unit else 3.0
+	# Boss HP bar below feet, normal enemies above head
+	var bar_y: float = base_scale * 32.0 + 5.0 if is_boss_unit else -radius - 7
 	draw_rect(Rect2(-w / 2, bar_y, w, h), Color(0.15, 0.15, 0.15))
 	var ratio: float = float(hp) / float(max_hp)
 	var bar_color: Color

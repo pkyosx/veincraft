@@ -239,9 +239,9 @@ const ENEMY_CONFIGS: Dictionary = {
 		"radius": 14.0, "gold": 8, "sprite": "monster_golem.png",
 	},
 	EnemyType.NOOB_BOSS: {
-		"name": "Noob Boss", "hp_mult": 50.0, "speed_mult": 0.3,
+		"name": "Noob Boss", "hp_mult": 200.0, "speed_mult": 0.25,
 		"color": Color(0.96, 0.8, 0.19), "color_light": Color(1.0, 0.9, 0.3),
-		"radius": 20.0, "gold": 100, "sprite": "monster_noob_boss_sheet.png", "frames": 6,
+		"radius": 30.0, "gold": 500, "sprite": "monster_noob_boss_4dir.png", "frames": 8, "vframes": 4,
 		"boss": true,
 	},
 }
@@ -261,7 +261,8 @@ static func get_wave_composition(wave: int) -> Array:
 	# Each wave introduces a new monster type
 	var wave_pool: Array = []
 	match wave:
-		1, 2: wave_pool = [EnemyType.SLIME]
+		1: wave_pool = [EnemyType.SLIME]
+		2: wave_pool = [EnemyType.SLIME]
 		3: wave_pool = [EnemyType.SLIME, EnemyType.SKELETON]
 		4: wave_pool = [EnemyType.SLIME, EnemyType.SKELETON, EnemyType.GOBLIN]
 		5: wave_pool = [EnemyType.GOBLIN, EnemyType.WOLF, EnemyType.SKELETON]
