@@ -152,7 +152,7 @@ const SPIN_COST: int = 10
 const PREMIUM_SPIN_COST: int = 50
 const MAX_BAG: int = 8
 const MAX_HP: int = 3
-const STARTING_GOLD: int = 99999
+const STARTING_GOLD: int = 30
 const KILL_GOLD: int = 3
 
 # Winding path through the 18x12 grid

@@ -144,7 +144,7 @@ Use `--lite` (80 tools) for editors with 100-tool limit. Use `--minimal` (35 too
 6. **Tower sheet order**: Turret=0, Trebuchet=1, Frost=2, Tesla=3, Racer=4, Police=5, FireTruck=6, (Ambulance=7 unused), MonsterTruck=8
 
 ## Current State
-- **Starting gold**: $99999 (testing mode - change back to 30 for release)
-- **Wave 1**: Noob Boss only (testing mode - change back to Slime for release)
-- **Obstacles**: Removed (no rocks/trees)
+- **Starting gold**: 30 (Release limit)
+- **Wave 1**: Slime (Release normal start)
+- **Obstacles**: Restored (Rocks, trees, and hidden treasures now active)
 - **Language**: UI in English, code comments in English

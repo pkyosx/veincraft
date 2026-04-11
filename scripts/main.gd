@@ -70,8 +70,27 @@ func _init_grid() -> void:
 		grid[p.y][p.x] = GameData.Cell.PATH
 		path_set[p] = true
 
-	# No obstacles
-
+	# Generate random obstacles
+	for y in range(GameData.GRID_H):
+		for x in range(GameData.GRID_W):
+			if grid[y][x] == GameData.Cell.EMPTY:
+				# 15% chance to be an obstacle
+				if randf() < 0.15:
+					var pos = Vector2i(x, y)
+					grid[y][x] = GameData.Cell.ROCK if randf() > 0.4 else GameData.Cell.TREE
+					# ~40% chance to hide a treasure in the obstacle
+					if randf() < 0.4:
+						var treasure_roll: float = randf()
+						if treasure_roll < 0.3:
+							hidden_treasures[pos] = "gold"
+						elif treasure_roll < 0.55:
+							hidden_treasures[pos] = GameData.ItemType.TURRET
+						elif treasure_roll < 0.75:
+							hidden_treasures[pos] = GameData.ItemType.UPGRADE_DMG
+						elif treasure_roll < 0.9:
+							hidden_treasures[pos] = GameData.ItemType.UPGRADE_SPEED
+						else:
+							hidden_treasures[pos] = GameData.ItemType.TREBUCHET
 func cell_to_world(pos: Vector2i) -> Vector2:
 	return GameData.GRID_OFFSET + Vector2(pos.x * GameData.CELL_SIZE + GameData.CELL_SIZE / 2, pos.y * GameData.CELL_SIZE + GameData.CELL_SIZE / 2)
 
